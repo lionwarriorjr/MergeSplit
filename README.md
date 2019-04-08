@@ -1,7 +1,7 @@
 # MergeSplit
 An implementation of the custom MergeSplit Blockchain Protocol for JHU 601.641/441 Blockchains and Cryptocurrencies. Accommodates arbitrary merging and splitting of disjoint blockchains in a network to allow an arbitrary favoring of security over scalability or vice versa during processing of the network. A novel incentive scheme encourages miners to merge/split the blockchain at different points in time to encourage the optimal balance between high security and high throughput.
 
-## Authors: Srihari Mohan, Steven Zhang, Ben Pikus, Kevin Peng
+#### Authors: Srihari Mohan, Steven Zhang, Ben Pikus, Kevin Peng
 
 network.py:
 Implements overarching MergeSplit network that contains disjoint communities. The Network class is the driver from which merges and splits get proposed to, and the triggers merges and splits to be validated (and if approved) get executed. Trained models for the MergeSplit incentive scheme are deserialized in Network and used in the execution of the merges/splits in this file.
