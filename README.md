@@ -1,4 +1,4 @@
-# MergeSplit Blockchain Protocol
+# MergeSplit
 #### Authors: Srihari Mohan, Steven Zhang, Ben Pikus, Kevin Peng
 An implementation of the custom MergeSplit Blockchain Protocol for JHU 601.641/441 Blockchains and Cryptocurrencies. Accommodates arbitrary merging and splitting of disjoint blockchains in a network to allow an arbitrary favoring of security over scalability or vice versa during processing of the network. A novel incentive scheme encourages miners to merge/split the blockchain at different points in time to encourage the optimal balance between high security and high throughput.
 
