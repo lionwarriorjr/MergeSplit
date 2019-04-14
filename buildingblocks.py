@@ -31,11 +31,13 @@ class Transaction:
 # each block references a prev block, has an isGenesis flag,
 # and a flag indicating if the internal transaction is a mergesplit fee
 class Block:
-    def __init__(self, tx, prev, isGenesis=False, isFee=False):
-        self.tx = tx;
-        self.prev = prev;
+    def __init__(self, tx, prev, isGenesis=False, isFee=False, isSplit=False, isMerge=False):
+        self.tx = tx
+        self.prev = prev
         self.isGenesis = isGenesis
         self.isFee = isFee
+        self.isSplit = isSplit
+        self.isMerge = isMerge
 
 # represents each BlockNode in the BlockChain
 class BlockNode:

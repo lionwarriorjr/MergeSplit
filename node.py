@@ -43,6 +43,15 @@ class Node:
         # scheduler to send asynchronous merge/split proposals
         self.sched = Scheduler()
 
+    def setBlockChain(self, newBlockChain):
+        self.chain = newBlockChain
+
+    def getPublicKey(self):
+        return self.publicKey
+
+    def getStake(self):
+        return self.stake
+
     # starts sending asynchronous merge/split proposals
     def setRequestTimeout(self):
         if self.scheduler.running:
@@ -200,3 +209,15 @@ class Node:
             and self.validate(tx, self.chain.blockToNode[proposedBlock.prev], proposedBlock.isFee)):
             return True
         return False
+
+    # node gives approval for a split request
+    def approveSplit(self, proposal):
+        if random.randint(0, 4) == 0:
+            return False
+        return True
+
+    # node gives approval for a merge request
+    def approveMerge(self, proposal):
+        if random.randint(0, 4) == 0:
+            return False
+        return True

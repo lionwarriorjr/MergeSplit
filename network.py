@@ -49,6 +49,17 @@ class Network:
         # lock prevents multiple merges/splits from executing at the same time
         self.lock = Lock()
 
+    def _removeCommunity(self, id):
+        index = - 1
+        for i,community in enumerate(communities):
+            if community.getCommunityId() == id:
+                index = i
+
+        if index != -1:
+            self.communities.pop(index)
+
+        return
+        
     # executes a merge proposed by proposer between community1 and community2 
     def merge(self, proposer, community1, community2):
         # acquire lock to ensure that more than 1 merge/split can be executed at once
@@ -62,6 +73,8 @@ class Network:
                 if approved:
                     # if successful, proposer accrues a mergesplit transaction fee
                     community.accrueTransactionFee(proposer)
+                    self._removeCommunity(community2.getCommunityId())
+
         finally:
             # if the merge/split was not just executed (by another node)
             if not proposer.restart:
@@ -97,6 +110,11 @@ class Network:
                     else:
                         # proposer in communit2 accrues the transaction fee
                         community2.accrueTransactionFee(proposer)
+
+                    # remove old community from the network and add in the two new ones
+                    self._removeCommunity(community.getCommunityId())
+                    self.communities.append(community1)
+                    self.communities.append(community2)
         finally:
             # if the merge/split was not just executed (by another node)
             if not proposer.restart:

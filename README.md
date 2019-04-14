@@ -19,3 +19,8 @@ buildingblocks.py:
 
 utils.py:
 <br/>The Utils class holds static methods that implement utility functions like parsing input/output, serializing/deserializing blocks and transactions, and verifying message signatures.
+
+
+Merge block is placed in between two chains when they're merged together.
+
+Split block is placed at the start of a new community as a "genesis" block for that community. The split block is also placed at the end of the original chain to drain the funds from the nodes that are being moved to the other community.

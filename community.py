@@ -22,22 +22,37 @@ from .network import Network
 # represents an individual network/subgroup of nodes/transaction pools
 class Community:
     
-    def __init__(self, network, keys):
+    def __init__(self, network, keys=None, id, nodeList=None, pool=None):
         # store parent network this community is a part of
         self.network = network
         # number of nodes/forgers in community
-        self.nodeCount = len(keys)
+        self.nodeCount = 0
         # stores the forgers
         self.nodes = []
         # quick lookup for nodes based on public key address
         self.nodeLookup = {}
         # community's unique transaction pool
-        self.pool = []
-        # create constituent nodes of community
-        for i in range(self.nodeCount):
-            node = Node(keys[i][0], keys[i][1], self)
-            self.nodes.append(node)
-            self.nodeLookup[keys[i][0]] = node
+        self.pool = pool or []
+        # community's unique id
+        self.id = id
+        if nodeList != None:
+            self.nodeCount = len(nodeList)
+            self.nodes = nodeList
+            for i in range(self.nodeCount):
+                self.nodeLookup[node.getPublicKey] = nodes[i]
+        else:
+            # create constituent nodes of community
+            self.nodeCount = len(keys)
+            for i in range(self.nodeCount):
+                node = Node(keys[i][0], keys[i][1], self)
+                self.nodes.append(node)
+                self.nodeLookup[keys[i][0]] = node
+
+    def getCommunityNodes(self):
+        return self.nodes
+    
+    def getCommunityId(self):
+        return self.id
 
     # check if a public key address is used in this community
     def contains(self, address):
@@ -99,7 +114,7 @@ class Community:
                 tx = Utils.serializeTransaction(transaction)
                 # validate the transaction
                 if creator.validate(transaction, creator.chain.longestChain()):
-                    prev = H(str.encode(Utils.serializeBlock(self.chain.longestChain().block))).hexdigest()
+                    prev = H(str.encode(Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
                     block = Block(tx, prev)
                     # broadcast block to be added to the blockchain
                     self.broadcast(block)
@@ -120,7 +135,7 @@ class Community:
         # construct mergesplit transaction
         transaction = Transaction(number, receiverInput, receiverOutput, sig)
         tx = Utils.serializeTransaction(transaction)
-        prev = H(str.encode(Utils.serializeBlock(self.chain.longestChain().block))).hexdigest()
+        prev = H(str.encode(Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
         block = Block(tx, prev, False, True)
         # add mergesplit fee block to every node's chain
         for node in self.nodes:
@@ -145,8 +160,55 @@ class Community:
 
     ### TODO: implement merging functionality
     def merge(self, neighbor):
-        pass
+        # Query all nodes in both community to see if they want to merge
+        neighborNodes = neighbor.getCommunityNodes
+        for node in neighborNodes:
+            if not node.approveMerge():
+                return False
+
+        for node in self.nodes:
+            if not node.approveMerge():
+                return False
+        
+        newCommunity = None
+        # update blockchain for all nodes in both communities, inserting a mergeblock between the two chains
+        # combine the two communities transaction pool together
+
+        newCommunity = None
+
+        return (True, newCommunity)
     
-    ### TODO: implement splitting functionality
     def split(self):
-        pass
+        # randomly select half the nodes to split
+        newCommunityNodes = []
+        shuffle(self.nodes)
+        for i in range(int(self.nodeCount/2)):
+            newCommunityNodes.append(self.nodes[i])
+        
+        # Query all nodes in both community to see if they want to split
+        for node in self.nodes:
+            if not node.approveSplit():
+                return False
+
+        for newNode in newCommunityNodes:
+            self.nodes.remove(newNode)
+
+        # add a new split block to remaining nodes blockchain
+        #TODO generate transaction that drains money from nodes splitting
+        transaction = None 
+        splitBlock = Block(transaction, H(str.encode(Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest(), isSplit=True)
+        for node in self.nodes:
+            node.chain.addBlock(splitBlock)
+
+        # create a new blockchain for all nodes that are in the new community
+        #TODO generate transaction granting money to nodes in new community
+        newTransaction = None 
+        newBlock = Block(newTransaction, None)
+        newBlockChain = BlockChain()
+        newBlockChain.setGenesis(newBlock)
+        for node in newCommunityNodes:
+            node.setBlockChain(newBlockChain)
+
+        community1 = Community(self.network, keys=None, random.randint(0,10**10), nodeList=self.nodes, pool=self.pool)
+        community2 = Community(self.network, keys=None, random.randint(0,10**10), nodeList=newCommunityNodes)
+        return (True, community1, community2)
