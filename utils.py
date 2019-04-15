@@ -62,17 +62,26 @@ class Utils:
                 or not isinstance(out['pubkey'], str)):
                 return False
         return True
+
+    def parseTransactions(pool):
+        transactions = []
+        for t in pool:
+            if Utils.validateLegalTransaction(t):
+                transaction = Transaction(t["number"], t["input"], t["output"], t["sig"])
+                transactions.append(transaction)
+        return transactions
     
     # utility method to read in transactions from input file
     def readTransactionFile(filename):
-        transactions = []
+        communities = []
         with open(filename) as f:
             data = json.load(f)
-            for t in data:
-                if Utils.validateLegalTransaction(t):
-                    transaction = Transaction(t["number"], t["input"], t["output"], t["sig"])
-                    transactions.append(transaction)
-        return transactions
+            for community in data:
+                pool, keys = community["pool"], community["keys"]
+                transactions = Utils.parseTransactions(pool)
+                communities.append(Community(network=None, id=-1, pool=transactions,
+                                             keys=keys, nodeList=None))
+        return communities
     
     # utility method to serialize a transaction
     def serializeTransaction(transaction):
@@ -100,6 +109,10 @@ class Utils:
         wrapped = wrapped['data']
         return Transaction(wrapped[0], wrapped[1], wrapped[2], wrapped[3])
     
+    # utility method to generate random 256 bit nonces
+    def generateNonce(length=256):
+        return ''.join([str(random.randint(0,9)) for i in range(length)])
+
     # utility method to verify if public key can validate a message given its signature
     def verifyWithPublicKey(pubkey, message, signature):
         try:

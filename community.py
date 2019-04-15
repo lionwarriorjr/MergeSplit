@@ -22,7 +22,7 @@ from .network import Network
 # represents an individual network/subgroup of nodes/transaction pools
 class Community:
     
-    def __init__(self, network, keys=None, id, nodeList=None, pool=None):
+    def __init__(self, network, id, pool, keys=None, nodeList=None):
         # store parent network this community is a part of
         self.network = network
         # number of nodes/forgers in community
@@ -32,7 +32,7 @@ class Community:
         # quick lookup for nodes based on public key address
         self.nodeLookup = {}
         # community's unique transaction pool
-        self.pool = pool or []
+        self.pool = pool
         # community's unique id
         self.id = id
         if nodeList != None:
@@ -212,3 +212,22 @@ class Community:
         community1 = Community(self.network, keys=None, random.randint(0,10**10), nodeList=self.nodes, pool=self.pool)
         community2 = Community(self.network, keys=None, random.randint(0,10**10), nodeList=newCommunityNodes)
         return (True, community1, community2)
+
+    # quick check to find length of longest chain in each node's blockchain in a community
+    # returns the length of this longest chain if all nodes share the same longest chain
+    # returns False if there are 2 forked chains in a community with same longest length (can just rerun)
+    def checkForMatchedSequences(self):
+        for i in range(0,len(self.nodes)-1):
+            current = self.nodes[i].chain.longestChain()
+            nxt = self.nodes[i+1].chain.longestChain()
+            size = 0
+            while current:
+                if (current.block.tx != nxt.block.tx
+                    or current.block.prev != nxt.block.prev):
+                    return False
+                current = current.prev
+                nxt = nxt.prev
+                size += 1
+            if nxt:
+                return False
+        return size
