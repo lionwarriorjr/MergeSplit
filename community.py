@@ -12,11 +12,11 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-from .blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
+import blockchain
+import utils
+import node
+import network
+import buildingblocks
 
 
 # represents an individual network/subgroup of nodes/transaction pools
@@ -44,7 +44,7 @@ class Community:
             # create constituent nodes of community
             self.nodeCount = len(keys)
             for i in range(self.nodeCount):
-                node = Node(keys[i][0], keys[i][1], self)
+                node = node.Node(keys[i][0], keys[i][1], self)
                 self.nodes.append(node)
                 self.nodeLookup[keys[i][0]] = node
 
@@ -73,7 +73,7 @@ class Community:
     # dynamically add forgers to the community
     def add(self, publicKey, privateKey):
         # create the node
-        node = Node(publicKey, privateKey, self)
+        node = node.Node(publicKey, privateKey, self)
         self.nodes.append(node)
         self.nodeLookup[publicKey] = node
         # update node count
@@ -111,11 +111,11 @@ class Community:
             creator = self.selectCreator()
             for transaction in self.pool:
                 # select a transaction to include in the proposed block
-                tx = Utils.serializeTransaction(transaction)
+                tx = utils.Utils.serializeTransaction(transaction)
                 # validate the transaction
                 if creator.validate(transaction, creator.chain.longestChain()):
-                    prev = H(str.encode(Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
-                    block = Block(tx, prev)
+                    prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
+                    block = buildingblocks.Block(tx, prev)
                     # broadcast block to be added to the blockchain
                     self.broadcast(block)
 
@@ -133,10 +133,10 @@ class Community:
         sig = str(signed.signature, 'utf-8')
         number = H(str.encode(serializedInput + serializedOutput + sig)).hexdigest()
         # construct mergesplit transaction
-        transaction = Transaction(number, receiverInput, receiverOutput, sig)
-        tx = Utils.serializeTransaction(transaction)
-        prev = H(str.encode(Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
-        block = Block(tx, prev, False, True)
+        transaction = buildingblocks.Transaction(number, receiverInput, receiverOutput, sig)
+        tx = utils.Utils.serializeTransaction(transaction)
+        prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
+        block = buildingblocks.Block(tx, prev, False, True)
         # add mergesplit fee block to every node's chain
         for node in self.nodes:
             node.chain.addBlock(block)
@@ -195,22 +195,25 @@ class Community:
 
         # add a new split block to remaining nodes blockchain
         #TODO generate transaction that drains money from nodes splitting
-        transaction = None 
-        splitBlock = Block(transaction, H(str.encode(Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest(), isSplit=True)
+        transaction = None
+        serial = utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block)
+        splitBlock = buildingblocks.Block(transaction, H(str.encode(serial)).hexdigest(), isSplit=True)
         for node in self.nodes:
             node.chain.addBlock(splitBlock)
 
         # create a new blockchain for all nodes that are in the new community
         #TODO generate transaction granting money to nodes in new community
         newTransaction = None 
-        newBlock = Block(newTransaction, None)
-        newBlockChain = BlockChain()
+        newBlock = buildingblocks.Block(newTransaction, None)
+        newBlockChain = blockchain.BlockChain()
         newBlockChain.setGenesis(newBlock)
         for node in newCommunityNodes:
             node.setBlockChain(newBlockChain)
 
-        community1 = Community(self.network, keys=None, random.randint(0,10**10), nodeList=self.nodes, pool=self.pool)
-        community2 = Community(self.network, keys=None, random.randint(0,10**10), nodeList=newCommunityNodes)
+        community1 = community.Community(self.network, random.randint(0,10**10), 
+                                         pool=self.pool, keys=None, nodeList=self.nodes)
+        community2 = community.Community(self.network, random.randint(0,10**10), 
+                                         pool=[], keys=None, nodeList=newCommunityNodes)
         return (True, community1, community2)
 
     # quick check to find length of longest chain in each node's blockchain in a community

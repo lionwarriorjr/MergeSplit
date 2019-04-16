@@ -12,11 +12,10 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-from .blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
+import blockchain
+import node
+import network
+import buildingblocks
 
 
 # utility class that permits SerDes operations, signing verification, IO parsing
@@ -117,8 +116,7 @@ class Utils:
     def verifyWithPublicKey(pubkey, message, signature):
         try:
             verifyKey = str.encode(pubkey)
-            verifyKey = nacl.signing.VerifyKey(verifyKey,
-                                               encoder=nacl.encoding.HexEncoder)
+            verifyKey = nacl.signing.VerifyKey(verifyKey, encoder=nacl.encoding.HexEncoder)
             sig = str.encode(signature)
             bytesMessage = str.encode(str.encode(message).hex())
             # verify the message and signature using the public key

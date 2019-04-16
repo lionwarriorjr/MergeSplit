@@ -12,11 +12,11 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-from .blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
+import blockchain
+import utils
+import community
+import network 
+import buildingblocks
 
 
 # represents a forger who validates blocks and adds them to the blockchain
@@ -27,7 +27,9 @@ class Node:
         # public key address to reference node
         self.publicKey = publicKey
         # private key address to reference node
-        self.privateKey = privateKey
+        signingKey = str.encode(privateKey)
+        signingKey = nacl.signing.SigningKey(signingKey, encoder=nacl.encoding.HexEncoder)
+        self.privateKey = signingKey
         # private reference to network this node is part of
         self.network = community.network
         # private reference to community node is part of
@@ -37,7 +39,7 @@ class Node:
         # wait time before sending asynchronous merge/split proposals
         self.wait = random.randrange(self.network.requestTimeout)
         # reference node's blockchain
-        self.chain = BlockChain()
+        self.chain = blockchain.BlockChain()
         # restart for locking on merge/split proposals
         self.restart = False
         # scheduler to send asynchronous merge/split proposals
@@ -76,7 +78,7 @@ class Node:
     def checkNewTransaction(self, transaction, prev):
         current = prev
         while current:
-            currentTransaction = Utils.deserializeTransaction(current.block.tx)
+            currentTransaction = utils.Utils.deserializeTransaction(current.block.tx)
             if currentTransaction.number == transaction.number:
                 return False
             current = current.prev
@@ -95,7 +97,7 @@ class Node:
         for inp in transaction.inp:
             current = prev
             while current:
-                currentTransaction = Utils.deserializeTransaction(current.block.tx)
+                currentTransaction = utils.Utils.deserializeTransaction(current.block.tx)
                 if currentTransaction.number == inp['number']:
                     break
                 current = current.prev
@@ -121,7 +123,7 @@ class Node:
                                           for inp in transaction.inp])
                 serializedOutput = "".join([str(out['value']) + str(out['pubkey']) for out in transaction.out])
                 message = serializedInput + serializedOutput
-                Utils.verifyWithPublicKey(publicKeySender, message, transaction.sig)
+                utils.Utils.verifyWithPublicKey(publicKeySender, message, transaction.sig)
             except:
                 return False
         return True
@@ -131,12 +133,12 @@ class Node:
         for inp in transaction.inp:
             current = prev
             while current:
-                currentTransaction = Utils.deserializeTransaction(current.block.tx)
+                currentTransaction = utils.Utils.deserializeTransaction(current.block.tx)
                 if currentTransaction.number == inp['number']:
                     break
                 current = current.prev
             if current:
-                currentTransaction = Utils.deserializeTransaction(current.block.tx)
+                currentTransaction = utils.Utils.deserializeTransaction(current.block.tx)
                 found = False
                 for out in currentTransaction.out:
                     if (out['value'] == inp['output']['value']
@@ -155,7 +157,7 @@ class Node:
             current = prev
             # iterate back along the chain for each input in the transaction
             while current:
-                currentTransaction = Utils.deserializeTransaction(current.block.tx)
+                currentTransaction = utils.Utils.deserializeTransaction(current.block.tx)
                 if currentTransaction.number == inp['number']:
                     break
                 # check if an input along the chain matches the transaction input
@@ -195,14 +197,14 @@ class Node:
     # check if a transaction exists in pool that could be added to longest chain
     def validTransactionExists(self):
         for transaction in self.network.pool:
-            tx = Utils.serializeTransaction(transaction)
+            tx = utils.Utils.serializeTransaction(transaction)
             if self.validate(transaction, self.chain.longestChain()):
                 return True
         return False
     
     # verifies whether a proposed block can be added to the blockchain
     def verifyProposal(self, proposedBlock):
-        tx = Utils.deserializeTransaction(proposedBlock.tx)
+        tx = utils.Utils.deserializeTransaction(proposedBlock.tx)
         # next verify if this block can be added to a chain
         # and if the transaction contained in the block is valid
         if (self.chain.isValidPrev(proposedBlock.prev)

@@ -12,11 +12,11 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-from .blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
+import blockchain
+import utils
+import node
+import community
+import buildingblocks
 
 
 # parent network that holds constituent disjoint communities
@@ -59,11 +59,11 @@ class Network:
             print('community ' + str(community.id) + ': ' + str(keys))
             print(str(len(community.pool)) + ' transactions loaded into pool')
             active = sum([thread.isAlive() for thread in self.threads])
-            print(str(active) + ' threads currently active'
+            print(str(active) + ' threads currently active')
 
     def _removeCommunity(self, id):
         index = -1
-        for i,community in enumerate(communities):
+        for i, community in enumerate(communities):
             if community.getCommunityId() == id:
                 index = i
         if index != -1:

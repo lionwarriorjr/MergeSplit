@@ -12,11 +12,12 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-from .blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
+import blockchain
+import utils
+import node
+import community
+import network
+import buildingblocks
 
 
 class Driver:
@@ -26,17 +27,17 @@ class Driver:
         self.parseCommunities()
 
     def parseCommunities(self):
-        communities = Utils.parseCommunities(self.filename)
-        self.network = Network(communities)
+        communities = utils.Utils.parseCommunities(self.filename)
+        self.network = network.Network(communities)
         for i in range(len(communities)):
             self.network.communities[i].id = i
             self.network.communities[i].network = self.network
     
     def createGenesisBlock(self, transaction):
-        tx = Utils.serializeTransaction(transaction)
+        tx = utils.Utils.serializeTransaction(transaction)
         # generate arbitrary prev
-        prev = Utils.generateNonce()
-        return Block(tx, prev, isGenesis=True)
+        prev = utils.Utils.generateNonce()
+        return buildingblocks.Block(tx, prev, isGenesis=True)
 
     # reads transactions from input file, creates genesis blow in each node's blockchain,
     # and adds remaining transactions to global, unverified transaction pool
@@ -69,7 +70,7 @@ class Driver:
 def main():
     
     # instantiate blockchains main driver
-    driver = Driver(sys.argv[1]))
+    driver = Driver(sys.argv[1])
     # run the driver (simulate network activity with threads)
     driver.simulate()
     
@@ -83,7 +84,7 @@ def main():
     
     # log each node's blockchain to a file (in output/{nodeCount} directory)
     root = sys.argv[2]
-    for community in driver.network.communities):
+    for community in driver.network.communities:
         filePrefix = root + "/community" + str(community.id)
         for i in range(len(community.nodes)):
             filename = filePrefix + "/blockchains_node" + str(i+1) + ".json"
