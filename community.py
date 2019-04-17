@@ -114,7 +114,7 @@ class Community:
                 tx = utils.Utils.serializeTransaction(transaction)
                 # validate the transaction
                 if creator.validate(transaction, creator.chain.longestChain()):
-                    prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
+                    prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain().longestChain().block))).hexdigest()
                     block = buildingblocks.Block(tx, prev)
                     # broadcast block to be added to the blockchain
                     self.broadcast(block)
@@ -135,7 +135,7 @@ class Community:
         # construct mergesplit transaction
         transaction = buildingblocks.Transaction(number, receiverInput, receiverOutput, sig)
         tx = utils.Utils.serializeTransaction(transaction)
-        prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
+        prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain().longestChain().block))).hexdigest()
         block = buildingblocks.Block(tx, prev, False, True)
         # add mergesplit fee block to every node's chain
         for node in self.nodes:
