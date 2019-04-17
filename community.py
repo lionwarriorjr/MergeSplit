@@ -161,7 +161,7 @@ class Community:
     ### TODO: implement merging functionality
     def merge(self, neighbor):
         # Query all nodes in both community to see if they want to merge
-        neighborNodes = neighbor.getCommunityNodes
+        neighborNodes = neighbor.getCommunityNodes()
         for node in neighborNodes:
             if not node.approveMerge():
                 return False
@@ -170,13 +170,57 @@ class Community:
             if not node.approveMerge():
                 return False
         
-        newCommunity = None
         # update blockchain for all nodes in both communities, inserting a mergeblock between the two chains
         # combine the two communities transaction pool together
-
-        newCommunity = None
-
-        return (True, newCommunity)
+        mergeBlock = Block(None, self.nodes[self.nodeCount-1], isGenesis=False, isFee=False, isSplit=False, isMerge=True)
+        newChain = self.nodes[0].chain# TODO: make this better than just making it 0th node - do by voting
+        newChain.addBlock(mergeBlock)
+        insertPoint = newChain.longestLength
+        longestNeighbor = neighBorNodes[0].longestChain()#TODO: same as above
+        lengthAdded = 1
+        while !longestNeighbor.isGenesis:
+            newChain.insert(insertPoint,longestNeighbor)
+            lengthAdded = lengthAdded+1
+        # now need to add genesis block to chain append
+        # set neighbors genesis block to this block (currently won't work unless we change the hash sequence to not take prev)
+        longestNeigbor.changePrev(mergeBlock)
+        newChain.insert(insertPoint,longestNeighbor)
+        newChain.longestLength = newChain.longestLength+lengthAdded + 1
+        # proably can do better than looping over all nodes
+        for node in self.nodews:
+            node.chain = newChain
+        ''' old pow stuff
+        while True:
+            nonce = 0
+            blockHash = (H(mergeBlock.encode('utf-8') + nonce.encode('utf-8'))).hexdigest()
+            if int(blockHash,16) <= int(H(neighbor.nodes[0].encode('utf-8')),16):
+                # successful merge
+                newChain = self.nodes[0].chain# TODO: make this better than just making it 0th node - do by voting
+                newChain.addBlock(mergeBlock)
+                insertPoint = newChain.longestLength
+                longestNeighbor = neighBorNodes[0].longestChain()#TODO: same as above
+                lengthAdded = 1
+                while !longestNeighbor.isGenesis:
+                    newChain.insert(insertPoint,longestNeighbor)
+                    lengthAdded = lengthAdded+1
+                # now need to add genesis block to chain append
+                newChain.insert(insertPoint,longestNeighbor)
+                newChain.longestLength = newChain.longestLength+lengthAdded + 1
+                # proably can do better than looping over all nodes
+                for node in self.nodews:
+                    node.chain = newChain
+                break
+            else:
+                nonce = nonce + 1'''
+        for node in neighborNodes:
+            node.chain = newChain
+            self.nodes.append(node)
+            self.nodeLookup[node.getPublicKey] = self.nodes[self.nodeCount]
+            self.nodeCount = self.nodeCount+1
+        #self.nodeCount = self.nodeCount+neighbor.nodeCount
+        for tx in neighbor.pool:
+            self.pool.append(tx)
+        return (True, self)
     
     def split(self):
         # randomly select half the nodes to split

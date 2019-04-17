@@ -12,11 +12,11 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-from .blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
+from blockchain import *
+from utils import *
+from node import *
+from community import *
+from network import *
 
 
 # represents a forger who validates blocks and adds them to the blockchain

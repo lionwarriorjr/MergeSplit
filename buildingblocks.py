@@ -38,6 +38,11 @@ class Block:
         self.isFee = isFee
         self.isSplit = isSplit
         self.isMerge = isMerge
+    
+    # can only change prev if is genesis block and new block is merge
+    def changePrev(self, newPrev):
+        if self.isGenesis and newPrev.isMerge:
+            self.prev = newPrev
 
 # represents each BlockNode in the BlockChain
 class BlockNode:
