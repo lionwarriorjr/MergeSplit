@@ -1,6 +1,8 @@
 import sys
 import os
 
+
+# implements basic building block classes
 # represents a transaction
 class Transaction:
     def __init__(self, number, inp, out, sig):

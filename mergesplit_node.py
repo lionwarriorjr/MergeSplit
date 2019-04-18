@@ -19,7 +19,7 @@ import mergesplit_network
 import buildingblocks
 
 
-# represents a forger who validates blocks and adds them to the blockchain
+# implements a forger who validates blocks and adds them to the blockchain
 # accrues transaction fees for proposing merges/splits that get accepted
 class Node:
     

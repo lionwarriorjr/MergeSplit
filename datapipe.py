@@ -14,6 +14,7 @@ from mergesplit_community import Community
 from buildingblocks import Transaction, Block
 
 
+# utility class to generate input data conformant to MergeSplit analysis
 def random_sum_to(n):
     a = random.sample(range(1, n), random.randint(1, n-1)) + [0, n]
     list.sort(a)

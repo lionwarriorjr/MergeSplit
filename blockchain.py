@@ -17,7 +17,7 @@ import mergesplit_node
 import buildingblocks
 
 
-# blockchain data structure
+# implements blockchain data structure
 class BlockChain:
     
     def __init__(self):

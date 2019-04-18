@@ -20,6 +20,7 @@ import mergesplit_network
 import buildingblocks
 
 
+# implements main driver function to simulate MergeSplit activity in a network
 class Driver:
     
     def __init__(self, filename):

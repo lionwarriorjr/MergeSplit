@@ -19,7 +19,7 @@ import mergesplit_community
 import buildingblocks
 
 
-# utility class that permits SerDes operations, signing verification, IO parsing
+# implements a utility class that permits SerDes operations, signing verification, IO parsing
 class Utils:
     
     # utility method to validate legal transaction files

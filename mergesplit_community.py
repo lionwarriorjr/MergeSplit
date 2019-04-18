@@ -20,7 +20,7 @@ import mergesplit_network
 import buildingblocks
 
 
-# represents an individual network/subgroup of nodes/transaction pools
+# implements an individual network/subgroup of nodes/transaction pools
 class Community:
     
     def __init__(self, network, id, pool, keys=None, nodeList=None):

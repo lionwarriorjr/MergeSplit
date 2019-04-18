@@ -19,7 +19,7 @@ import mergesplit_community
 import buildingblocks
 
 
-# parent network that holds constituent disjoint communities
+# implements a parent network that holds constituent disjoint communities
 class Network:
 
     # model file for mergesplit merge model
