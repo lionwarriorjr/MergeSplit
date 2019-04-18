@@ -49,8 +49,8 @@ class Community:
                 self.nodes.append(node)
                 self.nodeLookup[keys[i][0]] = node
         
-        #for node in self.nodes:
-            #node.setRequestTimeout()
+        for node in self.nodes:
+            node.setRequestTimeout()
 
     def getCommunityNodes(self):
         return self.nodes

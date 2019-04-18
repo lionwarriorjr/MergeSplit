@@ -54,17 +54,9 @@ class Node:
     def getStake(self):
         return self.stake
 
-    # starts sending asynchronous merge/split proposals
-    def setRequestTimeout(self):
-        if self.scheduler.running:
-            self.sched.shutdown(wait=False)
-        self.sched.start()
-        self.sched.add_interval_job(proposeMerge, seconds=self.wait)
-        self.sched.add_interval_job(proposeSplit, seconds=self.wait)
-
     # node proposal to merge a community with another in the network
     def proposeMerge(self):
-        if self.network.communities:
+        if self.network and self.network.communities:
             neighbor = random.choice(self.network.communities)
             if self.network.canMerge(self.community, neighbor):
                 #self.network.merge(self.community, neighbor)
@@ -72,9 +64,17 @@ class Node:
 
     # node proposal to split a community into two new communites in the network
     def proposeSplit(self):
-        if self.network.canSplit(self.community):
+        if self.network and self.network.canSplit(self.community):
             #self.network.split(self.community)
             pass
+
+    # starts sending asynchronous merge/split proposals
+    def setRequestTimeout(self):
+        if self.sched.running:
+            self.sched.shutdown(wait=False)
+        self.sched.start()
+        self.sched.add_interval_job(self.proposeMerge, seconds=self.wait)
+        self.sched.add_interval_job(self.proposeSplit, seconds=self.wait)
     
     # checks if the transaction does not already exist on this chain
     def checkNewTransaction(self, transaction, prev):
