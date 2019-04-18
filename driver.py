@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import copy
 import json
 import numbers
@@ -76,7 +77,9 @@ def main():
     # instantiate blockchains main driver
     driver = Driver(sys.argv[1])
     # run the driver (simulate network activity with threads)
+    start = time.time()
     driver.simulate()
+    end = time.time()
     
     # log stats after completion
     print(str(len(driver.network.threads)) + " threads spun up")
@@ -85,6 +88,8 @@ def main():
     for community in driver.network.communities:
         print("Length of Verified Ledger for community " + str(community.id) + ": " + 
               str(community.checkForMatchedSequences()))
+
+    print('\nElapsed time (sec): ' + str(end-start))
     
     # log each node's blockchain to a file
     root = sys.argv[2]
