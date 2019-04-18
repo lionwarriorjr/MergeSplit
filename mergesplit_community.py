@@ -48,7 +48,6 @@ class Community:
                 node = mergesplit_node.Node(keys[i][0], keys[i][1], self)
                 self.nodes.append(node)
                 self.nodeLookup[keys[i][0]] = node
-        
         for node in self.nodes:
             node.setRequestTimeout()
 
@@ -84,7 +83,7 @@ class Community:
         self.nodeCount += 1
         node.chain = self.fetchUpToDateBlockchain()
         # start sending asynchronous merge/split proposals
-        # node.setRequestTimeout()
+        node.setRequestTimeout()
 
     def selectCreator(self):
         # randomly sample validators from nodeCount according to stake
@@ -190,7 +189,6 @@ class Community:
         newCommunity = None
         # update blockchain for all nodes in both communities, inserting a mergeblock between the two chains
         # combine the two communities transaction pool together
-
         newCommunity = None
 
         return (True, newCommunity)

@@ -216,12 +216,12 @@ class Node:
 
     # node gives approval for a split request
     def approveSplit(self, proposal):
-        if random.randint(0, 4) == 0:
+        if random.randint(0, 2) == 0:
             return False
         return True
 
     # node gives approval for a merge request
     def approveMerge(self, proposal):
-        if random.randint(0, 4) == 0:
+        if random.randint(0, 2) == 0:
             return False
         return True

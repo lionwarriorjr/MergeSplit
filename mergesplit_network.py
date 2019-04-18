@@ -30,7 +30,7 @@ class Network:
     predictionThreshold = 0.6
     # nodes must wait for random timeout between 0 and requestTimeout seconds
     # before sending successive mergesplit proposals (combats DOS attacks)
-    requestTimeout = 60
+    requestTimeout = 5
     # mergesplit fee to reward for proposing accepted merges/splits (inventive scheme)
     mergesplitFee = 5
     
@@ -201,4 +201,4 @@ class Network:
         # return whether model score > threshold to recommend the split
         #return score > self.predictionThreshold
 
-        return False
+        return True
