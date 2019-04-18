@@ -196,14 +196,17 @@ class Community:
     def split(self):
         # randomly select half the nodes to split
         newCommunityNodes = []
-        shuffle(self.nodes)
+        np.random.shuffle(self.nodes)
         for i in range(int(self.nodeCount/2)):
             newCommunityNodes.append(self.nodes[i])
         
-        # Query all nodes in both community to see if they want to split
+        # Query all nodes in both communities to see if they want to split
+        approved = 0
         for node in self.nodes:
-            if not node.approveSplit():
-                return False
+            if node.approveSplit():
+                approved += 1
+        if approved < self.nodeCount/2:
+            return False
 
         for newNode in newCommunityNodes:
             self.nodes.remove(newNode)
