@@ -2,6 +2,7 @@ import sys
 import os
 import copy
 import json
+import numpy as np
 import numbers
 from hashlib import sha256 as H
 import random
@@ -14,8 +15,8 @@ from threading import Lock
 from apscheduler.scheduler import Scheduler
 import blockchain
 import utils
-import node
-import network
+import mergesplit_node
+import mergesplit_network
 import buildingblocks
 
 
@@ -44,9 +45,12 @@ class Community:
             # create constituent nodes of community
             self.nodeCount = len(keys)
             for i in range(self.nodeCount):
-                node = node.Node(keys[i][0], keys[i][1], self)
+                node = mergesplit_node.Node(keys[i][0], keys[i][1], self)
                 self.nodes.append(node)
                 self.nodeLookup[keys[i][0]] = node
+        
+        #for node in self.nodes:
+            #node.setRequestTimeout()
 
     def getCommunityNodes(self):
         return self.nodes
@@ -64,31 +68,34 @@ class Community:
     # fetch up-to-date blockchain for new nodes/forgers when added to community
     def fetchUpToDateBlockchain(self):
         if self.nodeCount > 0:
-            blockchain = self.nodes[0].chain
+            chain = self.nodes[0].chain
             # return deep copy of a node's blockchain
-            return copy.deepcopy(blockchain)
+            return copy.deepcopy(chain)
         else:
-            return BlockChain()
+            return blockchain.BlockChain()
 
     # dynamically add forgers to the community
     def add(self, publicKey, privateKey):
         # create the node
-        node = node.Node(publicKey, privateKey, self)
+        node = mergesplit_node.Node(publicKey, privateKey, self)
         self.nodes.append(node)
         self.nodeLookup[publicKey] = node
         # update node count
         self.nodeCount += 1
         node.chain = self.fetchUpToDateBlockchain()
         # start sending asynchronous merge/split proposals
-        node.setRequestTimeout()
+        # node.setRequestTimeout()
 
     def selectCreator(self):
         # randomly sample validators from nodeCount according to stake
         dist = [0] * self.nodeCount
         totalStake = sum([node.stake for node in self.nodes])
-        dist = [node.stake / totalStake for node in self.nodes]
+        if totalStake == 0:
+            dist = [1./len(self.nodes) for node in self.nodes]
+        else:
+            dist = [node.stake / totalStake for node in self.nodes]
         # randomly samply validator for proof of stake
-        creator = np.random.choice(self.nodeCount, 1, p=dist)
+        creator = np.random.choice(self.nodeCount, 1, p=dist)[0]
         return self.nodes[creator]
 
     # updates stake for a node in the community
@@ -103,6 +110,13 @@ class Community:
         for node in stakes:
             self.nodeLookup[node].stake += stakes[node]
 
+    # check if a transaction exists in pool that could be added to longest chain
+    def validTransactionExists(self):
+        for node in self.nodes:
+            if node.validTransactionExists():
+                return True
+        return False
+
     # driver run function executed within thread context
     def run(self):
         # as long as valid transactions exist in the community
@@ -114,15 +128,17 @@ class Community:
                 tx = utils.Utils.serializeTransaction(transaction)
                 # validate the transaction
                 if creator.validate(transaction, creator.chain.longestChain()):
-                    prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
+                    chain = self.nodes[0].chain
+                    prev = H(str.encode(utils.Utils.serializeBlock(chain.longestChain().block))).hexdigest()
                     block = buildingblocks.Block(tx, prev)
                     # broadcast block to be added to the blockchain
                     self.broadcast(block)
+                    break
 
     # construct mergesplit transaction fee (novel incentive scheme)
     def accrueTransactionFee(self, receiver):
         inp = []
-        out = [{"value": self.network.mergesplitFee, "pubkey": receiver.address}]
+        out = [{"value": mergesplit_network.Network.mergesplitFee, "pubkey": receiver.address}]
         serializedInput = "".join([str(inp['number']) + str(inp['output']['value']) + str(inp['output']['pubkey'])
                                 for inp in receiverInput])
         serializedOutput = "".join([str(out['value']) + str(out['pubkey']) for out in receiverOutput])
@@ -135,13 +151,14 @@ class Community:
         # construct mergesplit transaction
         transaction = buildingblocks.Transaction(number, receiverInput, receiverOutput, sig)
         tx = utils.Utils.serializeTransaction(transaction)
-        prev = H(str.encode(utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block))).hexdigest()
+        chain = self.nodes[0].chain
+        prev = H(str.encode(utils.Utils.serializeBlock(chain.longestChain().block))).hexdigest()
         block = buildingblocks.Block(tx, prev, False, True)
         # add mergesplit fee block to every node's chain
         for node in self.nodes:
             node.chain.addBlock(block)
         # update stake of receiver of the fee
-        receiver.stake += self.network.mergesplitFee
+        receiver.stake += mergesplit_network.Network.mergesplitFee
         return True
 
     # broadcasts a proposed block to all nodes to verify and add to their blockchains
@@ -155,7 +172,7 @@ class Community:
             # restart indicates that each node should stop their pow calculation
             node.chain.addBlock(block)
         # update stakes of forgers after processing transaction
-        self.updateStake(transaction)
+        self.updateStake(utils.Utils.deserializeTransaction(block.tx))
         return True
 
     ### TODO: implement merging functionality
@@ -196,7 +213,7 @@ class Community:
         # add a new split block to remaining nodes blockchain
         #TODO generate transaction that drains money from nodes splitting
         transaction = None
-        serial = utils.Utils.serializeBlock(self.fetchUpToDateBlockchain.longestChain().block)
+        serial = utils.Utils.serializeBlock(self.fetchUpToDateBlockchain().longestChain().block)
         splitBlock = buildingblocks.Block(transaction, H(str.encode(serial)).hexdigest(), isSplit=True)
         for node in self.nodes:
             node.chain.addBlock(splitBlock)
@@ -210,10 +227,10 @@ class Community:
         for node in newCommunityNodes:
             node.setBlockChain(newBlockChain)
 
-        community1 = community.Community(self.network, random.randint(0,10**10), 
-                                         pool=self.pool, keys=None, nodeList=self.nodes)
-        community2 = community.Community(self.network, random.randint(0,10**10), 
-                                         pool=[], keys=None, nodeList=newCommunityNodes)
+        community1 = mergesplit_community.Community(self.network, random.randint(0,10**10), 
+                                                    pool=self.pool, keys=None, nodeList=self.nodes)
+        community2 = mergesplit_community.Community(self.network, random.randint(0,10**10), 
+                                                    pool=[], keys=None, nodeList=newCommunityNodes)
         return (True, community1, community2)
 
     # quick check to find length of longest chain in each node's blockchain in a community

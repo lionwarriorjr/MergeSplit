@@ -1,7 +1,6 @@
 import sys
 import os
 
-
 # represents a transaction
 class Transaction:
     def __init__(self, number, inp, out, sig):

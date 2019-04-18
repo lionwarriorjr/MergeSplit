@@ -14,9 +14,9 @@ from threading import Lock
 from apscheduler.scheduler import Scheduler
 import blockchain
 import utils
-import node
-import community
-import network
+import mergesplit_node
+import mergesplit_community
+import mergesplit_network
 import buildingblocks
 
 
@@ -27,8 +27,8 @@ class Driver:
         self.parseCommunities()
 
     def parseCommunities(self):
-        communities = utils.Utils.parseCommunities(self.filename)
-        self.network = network.Network(communities)
+        communities = utils.Utils.readTransactionFile(self.filename)
+        self.network = mergesplit_network.Network(communities)
         for i in range(len(communities)):
             self.network.communities[i].id = i
             self.network.communities[i].network = self.network
@@ -47,10 +47,12 @@ class Driver:
             if (len(pool) == 0):
                 raise NameError('Transaction list for community ' + str(community.id) + ' is empty!')
             # create genesis block
-            genesis = self.createGenesisBlock(pool.pop(0))
+            genesisTransaction = pool.pop(0)
+            genesisBlock = self.createGenesisBlock(genesisTransaction)
             # adds genesis to each node's blockchain
             for node in community.nodes:
-                node.chain.setGenesis(genesis)
+                node.chain.setGenesis(genesisBlock)
+            community.updateStake(genesisTransaction)
         self.network.summarize()
         return True
     
@@ -58,6 +60,7 @@ class Driver:
     # simulates network activity
     def simulate(self):
         self.initializeSimulation()
+        print('\ninitialized simulation')
         # start up threads
         for i in range(len(self.network.threads)):
             self.network.threads[i].start()
@@ -82,14 +85,14 @@ def main():
         print("Length of Verified Ledger for community " + str(community.id) + ": " + 
               str(community.checkForMatchedSequences()))
     
-    # log each node's blockchain to a file (in output/{nodeCount} directory)
+    # log each node's blockchain to a file
     root = sys.argv[2]
     for community in driver.network.communities:
         filePrefix = root + "/community" + str(community.id)
         for i in range(len(community.nodes)):
             filename = filePrefix + "/blockchains_node" + str(i+1) + ".json"
             os.makedirs(os.path.dirname(filename), exist_ok=True)
-            node.chain.log(filename)
+            community.nodes[i].chain.log(filename)
 
 if __name__== "__main__":
     main()

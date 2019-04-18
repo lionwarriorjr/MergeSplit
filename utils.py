@@ -13,8 +13,9 @@ import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
 import blockchain
-import node
-import network
+import mergesplit_node
+import mergesplit_network
+import mergesplit_community
 import buildingblocks
 
 
@@ -66,7 +67,7 @@ class Utils:
         transactions = []
         for t in pool:
             if Utils.validateLegalTransaction(t):
-                transaction = Transaction(t["number"], t["input"], t["output"], t["sig"])
+                transaction = buildingblocks.Transaction(t["number"], t["input"], t["output"], t["sig"])
                 transactions.append(transaction)
         return transactions
     
@@ -76,10 +77,10 @@ class Utils:
         with open(filename) as f:
             data = json.load(f)
             for community in data:
-                pool, keys = community["pool"], community["keys"]
+                pool, keys = community["pool"], community["signingKeys"]
                 transactions = Utils.parseTransactions(pool)
-                communities.append(Community(network=None, id=-1, pool=transactions,
-                                             keys=keys, nodeList=None))
+                communities.append(mergesplit_community.Community(network=None, id=-1, pool=transactions,
+                                                                  keys=keys, nodeList=None))
         return communities
     
     # utility method to serialize a transaction
@@ -100,13 +101,13 @@ class Utils:
     def deserializeBlock(block):
         wrapped = json.loads(block)
         wrapped = wrapped['data']
-        return Block(wrapped[0], wrapped[1])
+        return buildingblocks.Block(wrapped[0], wrapped[1])
         
     # utility method to deserialize a transaction
     def deserializeTransaction(tx):
         wrapped = json.loads(tx)
         wrapped = wrapped['data']
-        return Transaction(wrapped[0], wrapped[1], wrapped[2], wrapped[3])
+        return buildingblocks.Transaction(wrapped[0], wrapped[1], wrapped[2], wrapped[3])
     
     # utility method to generate random 256 bit nonces
     def generateNonce(length=256):

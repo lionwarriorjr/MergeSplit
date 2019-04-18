@@ -9,8 +9,8 @@ import nacl.signing
 import nacl.encoding
 from nacl.public import PrivateKey
 from utils import Utils
-from node import Node
-from community import Community
+from mergesplit_node import Node
+from mergesplit_community import Community
 from buildingblocks import Transaction, Block
 
 

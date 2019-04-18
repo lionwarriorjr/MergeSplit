@@ -13,8 +13,7 @@ import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
 import utils
-import node
-import network
+import mergesplit_node
 import buildingblocks
 
 

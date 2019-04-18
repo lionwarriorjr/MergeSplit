@@ -14,8 +14,8 @@ from threading import Lock
 from apscheduler.scheduler import Scheduler
 import blockchain
 import utils
-import community
-import network 
+import mergesplit_community
+import mergesplit_network 
 import buildingblocks
 
 
@@ -37,7 +37,7 @@ class Node:
         # node's stake in the system (for proof of stake)
         self.stake = 0
         # wait time before sending asynchronous merge/split proposals
-        self.wait = random.randrange(self.network.requestTimeout)
+        self.wait = random.randrange(mergesplit_network.Network.requestTimeout)
         # reference node's blockchain
         self.chain = blockchain.BlockChain()
         # restart for locking on merge/split proposals
@@ -67,12 +67,14 @@ class Node:
         if self.network.communities:
             neighbor = random.choice(self.network.communities)
             if self.network.canMerge(self.community, neighbor):
-                self.network.merge(self.community, neighbor)
+                #self.network.merge(self.community, neighbor)
+                pass
 
     # node proposal to split a community into two new communites in the network
     def proposeSplit(self):
         if self.network.canSplit(self.community):
-            self.network.split(self.community)
+            #self.network.split(self.community)
+            pass
     
     # checks if the transaction does not already exist on this chain
     def checkNewTransaction(self, transaction, prev):
@@ -196,7 +198,7 @@ class Node:
     
     # check if a transaction exists in pool that could be added to longest chain
     def validTransactionExists(self):
-        for transaction in self.network.pool:
+        for transaction in self.community.pool:
             tx = utils.Utils.serializeTransaction(transaction)
             if self.validate(transaction, self.chain.longestChain()):
                 return True

@@ -14,8 +14,8 @@ from threading import Lock
 from apscheduler.scheduler import Scheduler
 import blockchain
 import utils
-import node
-import community
+import mergesplit_node
+import mergesplit_community
 import buildingblocks
 
 
@@ -32,7 +32,7 @@ class Network:
     # before sending successive mergesplit proposals (combats DOS attacks)
     requestTimeout = 60
     # mergesplit fee to reward for proposing accepted merges/splits (inventive scheme)
-    mergeSplitFee = 5
+    mergesplitFee = 5
     
     def __init__(self, communities):
         # stores disjoint communties in the network
@@ -40,7 +40,8 @@ class Network:
         # stores running thread for each community
         self.threads = []
         # set executable thread for each community
-        for community in communities:
+        for i in range(len(communities)):
+            community = communities[i]
             self.threads.append(Thread(target=community.run, name='Node {}'.format(i)))
         # load mergesplit merge model
         #self.mergeModel = joblib.load(self.mergeModelPath)
@@ -95,7 +96,7 @@ class Network:
                         node.restart = True
                         # randomly assign a timeout period to every node in the community
                         # before sending another merge/split proposal
-                        node.wait = random.randrange(self.requestTimeout)
+                        node.wait = random.randrange(Network.requestTimeout)
                         node.setRequestTimeout()
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
@@ -136,7 +137,7 @@ class Network:
                         node.restart = True
                         # randomly assign a timeout period to every node in the community
                         # before sending another merge/split proposal
-                        node.wait = random.randrange(self.requestTimeout)
+                        node.wait = random.randrange(Network.requestTimeout)
                         node.setRequestTimeout()
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
@@ -189,7 +190,7 @@ class Network:
         # return whether model score > threshold to recommend the merge
         #return score > self.predictionThreshold
 
-        return True
+        return False
 
     # validate that a community can be split
     def canSplit(self, community):
@@ -200,4 +201,4 @@ class Network:
         # return whether model score > threshold to recommend the split
         #return score > self.predictionThreshold
 
-        return True
+        return False
