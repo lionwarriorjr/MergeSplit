@@ -12,14 +12,12 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-#from blockchain import BlockChain
-from utils import Utils
-from node import Node
-from community import Community
-from network import Network
+import utils
+import mergesplit_node
+import buildingblocks
 
 
-# blockchain data structure
+# implements blockchain data structure
 class BlockChain:
     
     def __init__(self):
@@ -32,8 +30,8 @@ class BlockChain:
         
     # adds a genesis block to the blockchain
     def setGenesis(self, genesis):
-        front = BlockNode(genesis)
-        genesisSerialized = H(str.encode(Utils.serializeBlock(genesis))).hexdigest()
+        front = buildingblocks.BlockNode(genesis)
+        genesisSerialized = H(str.encode(utils.Utils.serializeBlock(genesis))).hexdigest()
         self.blockToNode[genesisSerialized] = front
         self.blockToIndex[genesisSerialized] = 0
         self.longestLength = 1
@@ -43,8 +41,8 @@ class BlockChain:
     # handles forking if block added as new branch from previously seen block
     def addBlock(self, block):
         # constructs a new BlockNode
-        node = BlockNode(block, self.blockToNode[block.prev])
-        serialized = H(str.encode(Utils.serializeBlock(block))).hexdigest()
+        node = buildingblocks.BlockNode(block, self.blockToNode[block.prev])
+        serialized = H(str.encode(utils.Utils.serializeBlock(block))).hexdigest()
         self.blockToNode[serialized] = node
         if self.parents[block.prev] >= 1:
             # represents a fork

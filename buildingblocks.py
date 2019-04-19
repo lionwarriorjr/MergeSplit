@@ -1,24 +1,8 @@
 import sys
 import os
-import copy
-import json
-import numbers
-from hashlib import sha256 as H
-import random
-from collections import defaultdict
-from threading import Thread
-import time
-import nacl.encoding
-import nacl.signing
-from threading import Lock
-from apscheduler.scheduler import Scheduler
-from .blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
 
 
+# implements basic building block classes
 # represents a transaction
 class Transaction:
     def __init__(self, number, inp, out, sig):

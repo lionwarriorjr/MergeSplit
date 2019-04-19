@@ -12,14 +12,14 @@ import nacl.encoding
 import nacl.signing
 from threading import Lock
 from apscheduler.scheduler import Scheduler
-from blockchain import BlockChain
-from .utils import Utils
-from .node import Node
-from .community import Community
-from .network import Network
+import blockchain
+import utils
+import mergesplit_node
+import mergesplit_community
+import buildingblocks
 
 
-# parent network that holds constituent disjoint communities
+# implements a parent network that holds constituent disjoint communities
 class Network:
 
     # model file for mergesplit merge model
@@ -30,9 +30,9 @@ class Network:
     predictionThreshold = 0.6
     # nodes must wait for random timeout between 0 and requestTimeout seconds
     # before sending successive mergesplit proposals (combats DOS attacks)
-    requestTimeout = 60
+    requestTimeout = 5
     # mergesplit fee to reward for proposing accepted merges/splits (inventive scheme)
-    mergeSplitFee = 5
+    mergesplitFee = 5
     
     def __init__(self, communities):
         # stores disjoint communties in the network
@@ -40,25 +40,35 @@ class Network:
         # stores running thread for each community
         self.threads = []
         # set executable thread for each community
-        for community in communities:
+        for i in range(len(communities)):
+            community = communities[i]
             self.threads.append(Thread(target=community.run, name='Node {}'.format(i)))
         # load mergesplit merge model
-        self.mergeModel = joblib.load(self.mergeModelPath)
+        #self.mergeModel = joblib.load(self.mergeModelPath)
         # load mergesplit split model
-        self.splitModel = joblib.load(self.splitModelPath)
+        #self.splitModel = joblib.load(self.splitModelPath)
+        self.mergeModel = None
+        self.splitModel = None
         # lock prevents multiple merges/splits from executing at the same time
         self.lock = Lock()
+    
+    def summarize(self):
+        print('MergeSplit Network Summary:')
+        print(str(len(self.communities)) + ' communities loaded into network')
+        for community in self.communities:
+            keys = [node.publicKey for node in community.nodes]
+            print('community ' + str(community.id) + ': ' + str(keys))
+            print(str(len(community.pool)) + ' transactions loaded into pool')
+            active = sum([thread.isAlive() for thread in self.threads])
+            print(str(active) + ' threads currently active')
 
     def _removeCommunity(self, id):
-        index = - 1
-        for i,community in enumerate(communities):
+        index = -1
+        for i, community in enumerate(communities):
             if community.getCommunityId() == id:
                 index = i
-
         if index != -1:
             self.communities.pop(index)
-
-        return
         
     # executes a merge proposed by proposer between community1 and community2 
     def merge(self, proposer, community1, community2):
@@ -86,7 +96,7 @@ class Network:
                         node.restart = True
                         # randomly assign a timeout period to every node in the community
                         # before sending another merge/split proposal
-                        node.wait = random.randrange(self.requestTimeout)
+                        node.wait = random.randrange(Network.requestTimeout)
                         node.setRequestTimeout()
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
@@ -127,7 +137,7 @@ class Network:
                         node.restart = True
                         # randomly assign a timeout period to every node in the community
                         # before sending another merge/split proposal
-                        node.wait = random.randrange(self.requestTimeout)
+                        node.wait = random.randrange(Network.requestTimeout)
                         node.setRequestTimeout()
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
@@ -176,15 +186,19 @@ class Network:
         # check if merge op is legal
         # TODO: implement merge validation logic
         # ADD CODE HERE
-        score = self.scoreMerge(community1, community2)
+        #score = self.scoreMerge(community1, community2)
         # return whether model score > threshold to recommend the merge
-        return score > self.predictionThreshold
+        #return score > self.predictionThreshold
+
+        return False
 
     # validate that a community can be split
     def canSplit(self, community):
         # check if split op is legal
         # TODO: implement split validation logic
         # ADD CODE HERE
-        score = self.scoreSplit(community)
+        #score = self.scoreSplit(community)
         # return whether model score > threshold to recommend the split
-        return score > self.predictionThreshold
+        #return score > self.predictionThreshold
+
+        return True
