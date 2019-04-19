@@ -253,8 +253,12 @@ class Community:
         if approved < self.nodeCount/2:
             return False
 
+        pubkeys = []
         for newNode in newCommunityNodes:
+            pubkeys.append(newNode.publicKey)
             self.nodes.remove(newNode)
+
+        (transation, newTransaction) = self.generateSplitTransactions(pubkeys)
 
         # add a new split block to remaining nodes blockchain
         #TODO generate transaction that drains money from nodes splitting
@@ -268,9 +272,9 @@ class Community:
         #TODO generate transaction granting money to nodes in new community
         newTransaction = None 
         newBlock = buildingblocks.Block(newTransaction, None)
-        newBlockChain = blockchain.BlockChain()
-        newBlockChain.setGenesis(newBlock)
         for node in newCommunityNodes:
+            newBlockChain = BlockChain()
+            newBlockChain.setGenesis(newBlock)
             node.setBlockChain(newBlockChain)
 
         community1 = mergesplit_community.Community(self.network, random.randint(0,10**10), 
@@ -297,3 +301,115 @@ class Community:
             if nxt:
                 return False
         return size
+
+    # helper function to write the genesis transaction
+    # new_chain_balances: pubkey -> balance dict
+    def writeGenesisSplitTransaction(self, new_chain_balances):
+        inp = []
+        out = []
+
+        # create a new output genesis transaction with the balances owned by each pubkey as output
+        for key in new_chain_balances.keys():
+            coins = new_chain_balances[key]
+            out.append({"value": coins, "pubkey": key})
+
+        sig = H(str.encode(str(inp) + str(out))).hexdigest()
+        number = H(str.encode(str(inp) + str(out) + sig)).hexdigest()
+        transaction = buildingblocks.Transaction(number, inp, out, sig)
+
+        return transaction
+
+    # helper function to create the split transaction
+    # old_chain_to_zero: list of (values, pubkey) tuples of outputs from chain that were spent
+    # old_chain_retain:  list of (values, pubkey) tuples of outputs from chain that were not spent
+    def writeSplitTransaction(self, old_chain_to_zero, old_chain_retain):
+        inp = []
+        out = []
+        input_val = 0
+        output_val = 0
+        output_pairs = [item for item in old_chain_retain if item not in old_chain_to_zero]
+
+        # set put all viable outputs to the input of this new transaction
+        for (value, pubkey) in old_chain_retain:
+            inp.append({"value": value, "pubkey": pubkey})
+            input_val += value
+
+        # set all inputs not remaining in the old chain to output to 0
+        for (value, pubkey) in old_chain_to_zero:
+            out.append({"value": 0, "pubkey": pubkey})
+
+        # set all inputs remaining in the old chain to output to their original output value
+        for (value, pubkey) in output_pairs:
+            out.append({"value": value, "pubkey": pubkey})
+            output_val += value
+
+        sig = H(str.encode(str(inp) + str(out))).hexdigest()
+        number = H(str.encode(str(inp) + str(out) + sig)).hexdigest()
+        transaction = buildingblocks.Transaction(number, inp, out, sig)
+
+        if input_val > output_val:
+            return (transaction, input_val - output_val)
+        else:
+            print("ERROR TRANSACTION INPUT GREATER THAN OUTPUT")
+
+    # generates a pair of transactions (genesis, split) where the genesis transaction is the initial transaction
+    # for the new community and split is the next transaction for the original community
+    # pubkeys = list of public keys in the new community (split community)
+    def generateSplitTransactions(self, pubkeys):
+        block = self.fetchUpToDateBlockchain().longestChain().block
+        new_chain_balances = defaultdict(int)  # {pubkey: balance} dict for new genesis block
+        old_chain_to_zero = []  # list of (pubkey, value) pairs that are added to new genesis block
+        old_chain_spent = []  # helper list for transactions that are spent (inputs in a block on chain)
+        old_chain_retain = []  # list of (pubkey, value) pairs that are still valid to be used as inputs
+
+        while True:
+            tx = utils.Utils.deserializeTransaction(block.tx)
+            out = tx.out
+            inp = tx.inp
+
+            # iterate through all inputs and remove them as viable balances
+            for item in inp:
+                pubkey = item["pubkey"]
+                value = item["value"]
+                tx = (value, pubkey)
+
+                # add transaction to spent transactions list of old chain
+                old_chain_spent.append(tx)
+
+                # remove already spent transaction from initial balance of new chain
+                # should be no overflow error since using python
+                if pubkey in pubkeys:
+                    new_chain_balances[pubkey] -= value
+
+            # iterate through all outputs and add them as viable balances
+            for item in out:
+                pubkey = item["pubkey"]
+                value = item["value"]
+                tx = (value, pubkey)
+
+                # check if transaction has been spent, if not add to retained transactions
+                if not old_chain_spent.remove(tx):
+                    old_chain_retain.append(tx)
+                    # if transaction will be added to new community, add to list of transactions that will be zeroed
+                    if pubkey in pubkeys:
+                        old_chain_to_zero.append(tx)
+
+                # add output transaction to initial balance of new chain
+                if pubkey in pubkeys:
+                    new_chain_balances[pubkey] += value
+
+            # check if current block is a genesis block or split block, if so all transactions prior should be
+            # accounted for so stop
+            if not block.isGenesis and not block.isSplit:
+                block = block.prev
+                continue
+            else:
+                break
+
+        # final check to see if any spent(input) transactions remain suggesting a double spend
+        if len(old_chain_spent) == 0:
+            split_tx = self.writeSplitTransaction(old_chain_to_zero, old_chain_retain)
+            gen = self.writeGenesisSplitTransaction(new_chain_balances)
+            return (split_tx, gen)
+        else:
+            print("ERROR SPENT TRANSACTION ADDED TO NEW BALANCE")
