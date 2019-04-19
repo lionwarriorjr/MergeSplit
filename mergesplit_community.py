@@ -261,16 +261,12 @@ class Community:
         (transation, newTransaction) = self.generateSplitTransactions(pubkeys)
 
         # add a new split block to remaining nodes blockchain
-        #TODO generate transaction that drains money from nodes splitting
-        transaction = None
         serial = utils.Utils.serializeBlock(self.fetchUpToDateBlockchain().longestChain().block)
         splitBlock = buildingblocks.Block(transaction, H(str.encode(serial)).hexdigest(), isSplit=True)
         for node in self.nodes:
             node.chain.addBlock(splitBlock)
 
         # create a new blockchain for all nodes that are in the new community
-        #TODO generate transaction granting money to nodes in new community
-        newTransaction = None 
         newBlock = buildingblocks.Block(newTransaction, None)
         for node in newCommunityNodes:
             newBlockChain = BlockChain()
@@ -280,7 +276,7 @@ class Community:
         community1 = mergesplit_community.Community(self.network, random.randint(0,10**10), 
                                                     pool=self.pool, keys=None, nodeList=self.nodes)
         community2 = mergesplit_community.Community(self.network, random.randint(0,10**10), 
-                                                    pool=[], keys=None, nodeList=newCommunityNodes)
+                                                    pool=self.pool, keys=None, nodeList=newCommunityNodes)
         return (True, community1, community2)
 
     # quick check to find length of longest chain in each node's blockchain in a community
