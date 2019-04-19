@@ -65,8 +65,7 @@ class Node:
     # node proposal to split a community into two new communites in the network
     def proposeSplit(self):
         if self.network and self.network.canSplit(self.community):
-            #self.network.split(self.community)
-            pass
+            self.network.split(self.community)
 
     # starts sending asynchronous merge/split proposals
     def setRequestTimeout(self):
