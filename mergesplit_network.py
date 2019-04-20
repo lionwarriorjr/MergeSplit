@@ -72,7 +72,7 @@ class Network:
         
     # executes a merge proposed by proposer between community1 and community2 
     def merge(self, proposer, community1, community2):
-        # acquire lock to ensure that more than 1 merge/split can be executed at once
+        # acquire lock to ensure that no more than 1 merge/split can be executed at once
         self.lock.acquire()
         try:
             # check if a merge/split was not just executed
@@ -100,10 +100,12 @@ class Network:
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
             proposer.restart = False
+            # timeout the proposing node to mitigate DOS attacks
+            time.sleep(Network.requestTimeout)
 
     # executes a split proposed by proposer for community
     def split(self, proposer, community):
-        # acquire lock to ensure that more than 1 merge/split can be executed at once
+        # acquire lock to ensure that no more than 1 merge/split can be executed at once
         self.lock.acquire()
         try:
             # check if a merge/split was not just executed
@@ -117,7 +119,7 @@ class Network:
                         # proposer in community1 accrues the transaction fee
                         community1.accrueTransactionFee(proposer)
                     else:
-                        # proposer in communit2 accrues the transaction fee
+                        # proposer in community2 accrues the transaction fee
                         community2.accrueTransactionFee(proposer)
 
                     # remove old community from the network and add in the two new ones
@@ -128,8 +130,6 @@ class Network:
             # if the merge/split was not just executed (by another node)
             if not proposer.restart:
                 for c in self.communities:
-                    # indicate for other nodes about to acquire the lock
-                    # to give up their claim to it
                     for node in c.nodes:
                         # indicate for other nodes about to acquire the lock
                         # to give up their claim to it
@@ -141,6 +141,8 @@ class Network:
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
         proposer.restart = False
+        # timeout the proposing node to mitigate DOS attacks
+        time.sleep(Network.requestTimeout)
 
     # run ML classification of merge utility (novel incentive scheme)
     def scoreMerge(self, community1, community2):
