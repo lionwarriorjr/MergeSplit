@@ -258,7 +258,7 @@ class Community:
             pubkeys.append(newNode.publicKey)
             self.nodes.remove(newNode)
 
-        (transation, newTransaction) = self.generateSplitTransactions(pubkeys)
+        (transaction, newTransaction) = self.generateSplitTransactions(pubkeys)
 
         # add a new split block to remaining nodes blockchain
         serial = utils.Utils.serializeBlock(self.fetchUpToDateBlockchain().longestChain().block)
@@ -269,13 +269,13 @@ class Community:
         # create a new blockchain for all nodes that are in the new community
         newBlock = buildingblocks.Block(newTransaction, None)
         for node in newCommunityNodes:
-            newBlockChain = BlockChain()
+            newBlockChain = blockchain.BlockChain()
             newBlockChain.setGenesis(newBlock)
             node.setBlockChain(newBlockChain)
 
-        community1 = mergesplit_community.Community(self.network, random.randint(0,10**10), 
+        community1 = self.mergesplit_community.Community(self.network, random.randint(0,10**10),
                                                     pool=self.pool, keys=None, nodeList=self.nodes)
-        community2 = mergesplit_community.Community(self.network, random.randint(0,10**10), 
+        community2 = self.mergesplit_community.Community(self.network, random.randint(0,10**10),
                                                     pool=self.pool, keys=None, nodeList=newCommunityNodes)
         return (True, community1, community2)
 
@@ -289,7 +289,7 @@ class Community:
             size = 0
             while current:
                 if (current.block.tx != nxt.block.tx
-                    or current.block.prev != nxt.block.prev):
+                        or current.block.prev != nxt.block.prev):
                     return False
                 current = current.prev
                 nxt = nxt.prev
@@ -303,17 +303,19 @@ class Community:
     def writeGenesisSplitTransaction(self, new_chain_balances):
         inp = []
         out = []
+        total = 0
 
         # create a new output genesis transaction with the balances owned by each pubkey as output
         for key in new_chain_balances.keys():
             coins = new_chain_balances[key]
             out.append({"value": coins, "pubkey": key})
+            total += coins
 
         sig = H(str.encode(str(inp) + str(out))).hexdigest()
         number = H(str.encode(str(inp) + str(out) + sig)).hexdigest()
         transaction = buildingblocks.Transaction(number, inp, out, sig)
 
-        return transaction
+        return transaction, coins
 
     # helper function to create the split transaction
     # old_chain_to_zero: list of (values, pubkey) tuples of outputs from chain that were spent
@@ -344,7 +346,7 @@ class Community:
         transaction = buildingblocks.Transaction(number, inp, out, sig)
 
         if input_val > output_val:
-            return (transaction, input_val - output_val)
+            return transaction, input_val - output_val
         else:
             print("ERROR TRANSACTION INPUT GREATER THAN OUTPUT")
 
@@ -404,8 +406,11 @@ class Community:
 
         # final check to see if any spent(input) transactions remain suggesting a double spend
         if len(old_chain_spent) == 0:
-            split_tx = self.writeSplitTransaction(old_chain_to_zero, old_chain_retain)
-            gen = self.writeGenesisSplitTransaction(new_chain_balances)
-            return (split_tx, gen)
+            split_tx, sent_to_gen = self.writeSplitTransaction(old_chain_to_zero, old_chain_retain)
+            gen, total = self.writeGenesisSplitTransaction(new_chain_balances)
+            if sent_to_gen == total:
+                return split_tx, gen
+            else:
+                print("ERROR GENESIS TRANSACTION VALUE NOT EQUAL TO ORIGINAL BALANCES SUM")
         else:
             print("ERROR SPENT TRANSACTION ADDED TO NEW BALANCE")
