@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import json
 import numbers
 from hashlib import sha256 as H
@@ -14,11 +15,21 @@ from mergesplit_community import Community
 from buildingblocks import Transaction, Block
 
 
+MAX_TRANSACTION_THRESHOLD = 100
+MAX_INPUT_LIMIT = 1e6
+
 # utility class to generate input data conformant to MergeSplit analysis
-def random_sum_to(n):
-    a = random.sample(range(1, n), random.randint(1, n-1)) + [0, n]
-    list.sort(a)
-    return [a[i+1] - a[i] for i in range(len(a) - 1)]
+def split_money(target, nodeLimit):
+    numberNodes = random.randint(1, nodeLimit)
+    remaining = target
+    result = []
+    while remaining > 0 and len(result) < nodeLimit-1:
+        remove = random.randint(1, remaining)
+        result.append(remove)
+        remaining -= remove
+    if remaining > 0:
+        result.append(remaining)
+    return result
 
 def generateKeys(totalNodes):
     pubkeys, prikeys = [], []
@@ -52,34 +63,36 @@ def generateTransactions(transactionList, result,
                          pubkeys, prikeys, pubkeyMap):
     for i in range(1, totalTransactions):
         inputSum = 0
-        while inputSum <= 1:
-            inputSum = 0
-            transaction = transactionList[len(transactionList)-1]
-            receiver = random.randint(0, len(transaction.out)-1)
-            pubkeyReceiver = transaction.out[receiver]['pubkey']
-            receiverInput, receiverOutput = [], []
-            for receiverTransaction in transactionList:
-                if receiverTransaction == transaction:
-                    continue
-                for out in receiverTransaction.out:
-                    if out['pubkey'] == pubkeyReceiver:
-                        choose = choice([True, False])
-                        if choose:
-                            receiverInput.append({"number": receiverTransaction.number, 
-                                                  "output": {"value": out['value'], "pubkey": pubkeyReceiver}})
-                            inputSum += out['value']
-            if not receiverInput:
-                receiverInput.append({"number": transaction.number, 
-                                      "output": {"value": transaction.out[receiver]['value'], "pubkey": pubkeyReceiver}})
-                inputSum += transaction.out[receiver]['value']
-        x = random_sum_to(inputSum)
-        while len(x) == 0 or len(x) > totalNodes:
-            x = random_sum_to(inputSum)
+        transaction = transactionList[len(transactionList)-1]
+        receiver = random.randint(0, len(transaction.out)-1)
+        pubkeyReceiver = transaction.out[receiver]['pubkey']
+        receiverInput, receiverOutput = [], []
+        for receiverTransaction in transactionList:
+            if (len(receiverInput) == MAX_TRANSACTION_THRESHOLD
+                or inputSum >= MAX_INPUT_LIMIT):
+                break
+            elif receiverTransaction == transaction:
+                continue
+            for out in receiverTransaction.out:
+                if (len(receiverInput) == MAX_TRANSACTION_THRESHOLD
+                    or inputSum >= MAX_INPUT_LIMIT):
+                    break
+                if out['pubkey'] == pubkeyReceiver:
+                    choose = choice([True, False])
+                    if choose:
+                        receiverInput.append({"number": receiverTransaction.number, 
+                                              "output": {"value": out['value'], "pubkey": pubkeyReceiver}})
+                        inputSum += out['value']
+        if not receiverInput:
+            receiverInput.append({"number": transaction.number, 
+                                  "output": {"value": transaction.out[receiver]['value'], "pubkey": pubkeyReceiver}})
+            inputSum += transaction.out[receiver]['value']
+        x = split_money(inputSum, totalNodes)
         ids = random.sample(range(totalNodes), len(x))
-        for i in range(len(x)):
-            receiverOutput.append({"value": x[i], "pubkey": pubkeys[ids[i]]})
+        for j in range(len(x)):
+            receiverOutput.append({"value": x[j], "pubkey": pubkeys[ids[j]]})
         serializedInput = "".join([str(inp['number']) + str(inp['output']['value']) + str(inp['output']['pubkey'])
-                                for inp in receiverInput])
+                                  for inp in receiverInput])
         serializedOutput = "".join([str(out['value']) + str(out['pubkey']) for out in receiverOutput])
         message = str.encode(serializedInput + serializedOutput)
         prikey = prikeys[pubkeyMap[pubkeyReceiver]]
@@ -113,7 +126,9 @@ def main():
     totalCommunities = int(sys.argv[1])
     nodesPerCommunity = int(sys.argv[2])
     transactionLimitPerCommunity = int(sys.argv[3])
+    start = time.time()
     result = run(totalCommunities, nodesPerCommunity, transactionLimitPerCommunity)
+    end = time.time()
     filename = ("input/communities_" + str(totalCommunities) + "_nodes_" + 
                 str(nodesPerCommunity) + "_transactions_" + str(transactionLimitPerCommunity) + ".txt")
     os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -121,6 +136,7 @@ def main():
         json.dump(result, outfile, sort_keys=False, indent=4, ensure_ascii=False)
         outfile.close()
     print("Transaction file generated (contains double spends): " + filename)
+    print("time to generate inputs (sec): " + str(end-start))
     
 if __name__== "__main__":
     main()
