@@ -59,7 +59,7 @@ class Node:
         if self.network and self.network.communities:
             neighbor = random.choice(self.network.communities)
             if self.network.canMerge(self.community, neighbor):
-                #self.network.merge(self.community, neighbor)
+                # self.network.merge(self.community, neighbor)
                 pass
 
     # node proposal to split a community into two new communites in the network
@@ -143,7 +143,7 @@ class Node:
                 found = False
                 for out in currentTransaction.out:
                     if (out['value'] == inp['output']['value']
-                        and out['pubkey'] == inp['output']['pubkey']):
+                            and out['pubkey'] == inp['output']['pubkey']):
                         found = True
                         break
                 if not found:
@@ -165,7 +165,7 @@ class Node:
                 for currentInp in currentTransaction.inp:
                     if (currentInp['number'] == inp['number']
                         and currentInp['output']['pubkey'] == inp['output']['pubkey']
-                        and currentInp['output']['value'] == inp['output']['value']):
+                            and currentInp['output']['value'] == inp['output']['value']):
                         # we are trying to spend coins that were already sent off
                         # this is a double spend
                         return False
@@ -209,12 +209,12 @@ class Node:
         # next verify if this block can be added to a chain
         # and if the transaction contained in the block is valid
         if (self.chain.isValidPrev(proposedBlock.prev)
-            and self.validate(tx, self.chain.blockToNode[proposedBlock.prev], proposedBlock.isFee)):
+                and self.validate(tx, self.chain.blockToNode[proposedBlock.prev], proposedBlock.isFee)):
             return True
         return False
 
     # node gives approval for a split request
-    def approveSplit(self, proposal):
+    def approveSplit(self, proposal=None):
         if random.randint(0, 2) == 0:
             return False
         return True

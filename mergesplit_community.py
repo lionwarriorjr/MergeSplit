@@ -40,7 +40,8 @@ class Community:
             self.nodeCount = len(nodeList)
             self.nodes = nodeList
             for i in range(self.nodeCount):
-                self.nodeLookup[node.getPublicKey] = nodes[i]
+                nodes = self.nodes
+                self.nodeLookup[nodes[i].getPublicKey] = nodes[i]
         else:
             # create constituent nodes of community
             self.nodeCount = len(keys)
@@ -188,7 +189,7 @@ class Community:
         
         # update blockchain for all nodes in both communities, inserting a mergeblock between the two chains
         # combine the two communities transaction pool together
-        mergeBlock = Block(None, self.nodes[self.nodeCount-1], isGenesis=False, isFee=False, isSplit=False, isMerge=True)
+        mergeBlock = buildingblocks.Block(None, self.nodes[self.nodeCount-1], isGenesis=False, isFee=False, isSplit=False, isMerge=True)
         newChain = self.nodes[0].chain# TODO: make this better than just making it 0th node - do by voting
         newChain.addBlock(mergeBlock)
         insertPoint = newChain.longestLength
@@ -199,7 +200,7 @@ class Community:
             lengthAdded = lengthAdded+1
         # now need to add genesis block to chain append
         # set neighbors genesis block to this block (currently won't work unless we change the hash sequence to not take prev)
-        longestNeigbor.changePrev(mergeBlock)
+        longestNeighbor.changePrev(mergeBlock)
         newChain.insert(insertPoint,longestNeighbor)
         newChain.longestLength = newChain.longestLength+lengthAdded + 1
         # proably can do better than looping over all nodes
@@ -258,7 +259,9 @@ class Community:
             pubkeys.append(newNode.publicKey)
             self.nodes.remove(newNode)
 
-        (transaction, newTransaction) = self.generateSplitTransactions(pubkeys)
+        transaction, newTransaction = self.generateSplitTransactions(pubkeys)
+        transaction = utils.Utils.serializeTransaction(transaction)
+        newTransaction = utils.Utils.serializeTransaction(newTransaction)
 
         # add a new split block to remaining nodes blockchain
         serial = utils.Utils.serializeBlock(self.fetchUpToDateBlockchain().longestChain().block)
@@ -273,9 +276,9 @@ class Community:
             newBlockChain.setGenesis(newBlock)
             node.setBlockChain(newBlockChain)
 
-        community1 = self.mergesplit_community.Community(self.network, random.randint(0,10**10),
+        community1 = Community(self.network, random.randint(0,10**10),
                                                     pool=self.pool, keys=None, nodeList=self.nodes)
-        community2 = self.mergesplit_community.Community(self.network, random.randint(0,10**10),
+        community2 = Community(self.network, random.randint(0,10**10),
                                                     pool=self.pool, keys=None, nodeList=newCommunityNodes)
         return (True, community1, community2)
 
@@ -315,7 +318,7 @@ class Community:
         number = H(str.encode(str(inp) + str(out) + sig)).hexdigest()
         transaction = buildingblocks.Transaction(number, inp, out, sig)
 
-        return transaction, coins
+        return transaction, total
 
     # helper function to create the split transaction
     # old_chain_to_zero: list of (values, pubkey) tuples of outputs from chain that were spent
@@ -386,7 +389,9 @@ class Community:
                 tx = (value, pubkey)
 
                 # check if transaction has been spent, if not add to retained transactions
-                if not old_chain_spent.remove(tx):
+                if tx in old_chain_spent:
+                    old_chain_spent.remove(tx)
+                else:
                     old_chain_retain.append(tx)
                     # if transaction will be added to new community, add to list of transactions that will be zeroed
                     if pubkey in pubkeys:

@@ -70,6 +70,7 @@ class Driver:
         for i in range(len(self.network.threads)):
             self.network.threads[i].join()
 
+
 # main driver to instantiate MergeSplit driver class and simulate network activity with threads
 # receives as command-line arguments the input file and output directory to store logged blockchains
 def main():
@@ -99,6 +100,7 @@ def main():
             filename = filePrefix + "/blockchains_node" + str(i+1) + ".json"
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             community.nodes[i].chain.log(filename)
+
 
 if __name__== "__main__":
     main()
