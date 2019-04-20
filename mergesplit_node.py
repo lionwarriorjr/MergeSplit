@@ -39,7 +39,7 @@ class Node:
         # node's stake in the system (for proof of stake)
         self.stake = 0
         # wait time before sending asynchronous merge/split proposals
-        self.wait = random.randrange(mergesplit_network.Network.requestTimeout)
+        self.wait = random.randrange(1, mergesplit_network.Network.requestTimeout)
         # reference node's blockchain
         self.chain = blockchain.BlockChain()
         # restart for locking on merge/split proposals

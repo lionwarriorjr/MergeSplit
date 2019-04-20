@@ -95,7 +95,7 @@ class Network:
                         node.restart = True
                         # randomly assign a timeout period to every node in the community
                         # before sending another merge/split proposal
-                        node.wait = random.randrange(Network.requestTimeout)
+                        node.wait = random.randrange(1, Network.requestTimeout)
                         node.setRequestTimeout()
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
@@ -136,7 +136,7 @@ class Network:
                         node.restart = True
                         # randomly assign a timeout period to every node in the community
                         # before sending another merge/split proposal
-                        node.wait = random.randrange(Network.requestTimeout)
+                        node.wait = random.randrange(1, Network.requestTimeout)
                         node.setRequestTimeout()
             # release lock allowing merge/splits to be proposed again
             self.lock.release()
