@@ -23,6 +23,8 @@ import buildingblocks
 # accrues transaction fees for proposing merges/splits that get accepted
 class Node:
     
+    MISFIRE_GRACE_TIME = 10
+
     def __init__(self, publicKey, privateKey, community):
         # public key address to reference node
         self.publicKey = publicKey
@@ -72,8 +74,10 @@ class Node:
         if self.sched.running:
             self.sched.shutdown(wait=False)
         self.sched.start()
-        self.sched.add_interval_job(self.proposeMerge, seconds=self.wait)
-        self.sched.add_interval_job(self.proposeSplit, seconds=self.wait)
+        self.sched.add_interval_job(self.proposeMerge, seconds=self.wait, 
+                                    misfire_grace_time=Node.MISFIRE_GRACE_TIME)
+        self.sched.add_interval_job(self.proposeSplit, seconds=self.wait, 
+                                    misfire_grace_time=Node.MISFIRE_GRACE_TIME)
     
     # checks if the transaction does not already exist on this chain
     def checkNewTransaction(self, transaction, prev):

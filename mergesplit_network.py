@@ -84,7 +84,6 @@ class Network:
                     # if successful, proposer accrues a mergesplit transaction fee
                     community.accrueTransactionFee(proposer)
                     self._removeCommunity(community2.getCommunityId())
-
         finally:
             # if the merge/split was not just executed (by another node)
             if not proposer.restart:

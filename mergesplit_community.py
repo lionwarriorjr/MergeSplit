@@ -206,29 +206,6 @@ class Community:
         # proably can do better than looping over all nodes
         for node in self.nodews:
             node.chain = newChain
-        ''' old pow stuff
-        while True:
-            nonce = 0
-            blockHash = (H(mergeBlock.encode('utf-8') + nonce.encode('utf-8'))).hexdigest()
-            if int(blockHash,16) <= int(H(neighbor.nodes[0].encode('utf-8')),16):
-                # successful merge
-                newChain = self.nodes[0].chain# TODO: make this better than just making it 0th node - do by voting
-                newChain.addBlock(mergeBlock)
-                insertPoint = newChain.longestLength
-                longestNeighbor = neighBorNodes[0].longestChain()#TODO: same as above
-                lengthAdded = 1
-                while !longestNeighbor.isGenesis:
-                    newChain.insert(insertPoint,longestNeighbor)
-                    lengthAdded = lengthAdded+1
-                # now need to add genesis block to chain append
-                newChain.insert(insertPoint,longestNeighbor)
-                newChain.longestLength = newChain.longestLength+lengthAdded + 1
-                # proably can do better than looping over all nodes
-                for node in self.nodews:
-                    node.chain = newChain
-                break
-            else:
-                nonce = nonce + 1'''
         for node in neighborNodes:
             node.chain = newChain
             self.nodes.append(node)
@@ -276,10 +253,10 @@ class Community:
             newBlockChain.setGenesis(newBlock)
             node.setBlockChain(newBlockChain)
 
-        community1 = Community(self.network, random.randint(0,10**10),
-                                                    pool=self.pool, keys=None, nodeList=self.nodes)
-        community2 = Community(self.network, random.randint(0,10**10),
-                                                    pool=self.pool, keys=None, nodeList=newCommunityNodes)
+        community1 = Community(self.network, random.randint(0,10**10), pool=self.pool, 
+                               keys=None, nodeList=self.nodes)
+        community2 = Community(self.network, random.randint(0,10**10), pool=self.pool, 
+                               keys=None, nodeList=newCommunityNodes)
         return (True, community1, community2)
 
     # quick check to find length of longest chain in each node's blockchain in a community

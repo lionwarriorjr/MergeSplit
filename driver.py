@@ -86,6 +86,7 @@ def main():
     print(str(len(driver.network.threads)) + " threads spun up")
     # logs the length of the longest chain (valid blockchain)
     
+    print(str(len(driver.network.communities)) + ' communities exist after processing')
     for community in driver.network.communities:
         print("Length of Verified Ledger for community " + str(community.id) + ": " + 
               str(community.checkForMatchedSequences()))
