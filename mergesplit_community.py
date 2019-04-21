@@ -355,8 +355,8 @@ class Community:
 
             # iterate through all inputs and remove them as viable balances
             for item in inp:
-                pubkey = item["pubkey"]
-                value = item["value"]
+                pubkey = item["output"]["pubkey"]
+                value = item["output"]["value"]
                 transaction = (value, pubkey)
 
                 # add transaction to spent transactions list of old chain
