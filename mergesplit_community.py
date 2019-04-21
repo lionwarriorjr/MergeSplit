@@ -167,7 +167,6 @@ class Community:
             node.chain.addBlock(block)
         # update stake of receiver of the fee
         receiver.stake += mergesplit_network.Network.mergesplitFee
-        print(tx)
         return True
 
     # broadcasts a proposed block to all nodes to verify and add to their blockchains
@@ -223,7 +222,7 @@ class Community:
         #self.nodeCount = self.nodeCount+neighbor.nodeCount
         for tx in neighbor.pool:
             self.pool.append(tx)
-        return (True, self)
+        return True, self
     
     def split(self):
         # randomly select half the nodes to split
@@ -266,7 +265,7 @@ class Community:
                                keys=None, nodeList=self.nodes)
         community2 = Community(self.network, random.randint(0,10**10), pool=self.pool, 
                                keys=None, nodeList=newCommunityNodes)
-        return (True, community1, community2)
+        return True, community1, community2
 
     # quick check to find length of longest chain in each node's blockchain in a community
     # returns the length of this longest chain if all nodes share the same longest chain
