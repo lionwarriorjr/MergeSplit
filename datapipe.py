@@ -110,9 +110,8 @@ def run(totalCommunities, nodesPerCommunity, transactionLimitPerCommunity):
         pubkeys, prikeys, pubkeyMap = generateKeys(nodesPerCommunity)
         transactionList, current = [], []
         createGenesisTransaction(transactionList, current, pubkeys)
-        ntrans = random.randint(1, transactionLimitPerCommunity)
         generateTransactions(transactionList, current, 
-                             nodesPerCommunity, ntrans,
+                             nodesPerCommunity, transactionLimitPerCommunity,
                              pubkeys, prikeys, pubkeyMap)
         keys = []
         for i in range(len(pubkeys)):
