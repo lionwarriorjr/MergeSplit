@@ -342,13 +342,14 @@ class Community:
     # for the new community and split is the next transaction for the original community
     # pubkeys = list of public keys in the new community (split community)
     def generateSplitTransactions(self, pubkeys):
-        block = self.fetchUpToDateBlockchain().longestChain().block
+        block_node = self.fetchUpToDateBlockchain().longestChain()
         new_chain_balances = defaultdict(int)  # {pubkey: balance} dict for new genesis block
         old_chain_to_zero = []  # list of (pubkey, value) pairs that are added to new genesis block
         old_chain_spent = []  # helper list for transactions that are spent (inputs in a block on chain)
         old_chain_retain = []  # list of (pubkey, value) pairs that are still valid to be used as inputs
 
         while True:
+            block = block_node.block
             tx = utils.Utils.deserializeTransaction(block.tx)
             out = tx.out
             inp = tx.inp
@@ -389,7 +390,7 @@ class Community:
             # check if current block is a genesis block or split block, if so all transactions prior should be
             # accounted for so stop
             if not block.isGenesis and not block.isSplit:
-                block = block.prev
+                block_node = block_node.prev
                 continue
             else:
                 break
