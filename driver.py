@@ -34,6 +34,8 @@ class Driver:
         for i in range(len(communities)):
             self.network.communities[i].id = i
             self.network.communities[i].network = self.network
+            for node in self.network.communities[i].nodes:
+                node.network = self.network
     
     def createGenesisBlock(self, transaction):
         tx = utils.Utils.serializeTransaction(transaction)

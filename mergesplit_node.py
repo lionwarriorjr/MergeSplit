@@ -10,8 +10,6 @@ from threading import Thread
 import time
 import nacl.encoding
 import nacl.signing
-from threading import Lock
-from apscheduler.scheduler import Scheduler
 import blockchain
 import utils
 import mergesplit_community
@@ -22,8 +20,6 @@ import buildingblocks
 # implements a forger who validates blocks and adds them to the blockchain
 # accrues transaction fees for proposing merges/splits that get accepted
 class Node:
-    
-    MISFIRE_GRACE_TIME = 10
 
     def __init__(self, publicKey, privateKey, community):
         # public key address to reference node
@@ -38,14 +34,8 @@ class Node:
         self.community = community
         # node's stake in the system (for proof of stake)
         self.stake = 0
-        # wait time before sending asynchronous merge/split proposals
-        self.wait = random.randrange(1, mergesplit_network.Network.requestTimeout)
         # reference node's blockchain
         self.chain = blockchain.BlockChain()
-        # restart for locking on merge/split proposals
-        self.restart = False
-        # scheduler to send asynchronous merge/split proposals
-        self.sched = Scheduler()
 
     def setBlockChain(self, newBlockChain):
         self.chain = newBlockChain
@@ -61,23 +51,13 @@ class Node:
         if self.network and self.network.communities:
             neighbor = random.choice(self.network.communities)
             if self.network.canMerge(self.community, neighbor):
-                # self.network.merge(self.community, neighbor)
+                # self.network.merge(self, self.community, neighbor)
                 pass
 
     # node proposal to split a community into two new communites in the network
     def proposeSplit(self):
         if self.network and self.network.canSplit(self.community):
-            self.network.split(self.community)
-
-    # starts sending asynchronous merge/split proposals
-    def setRequestTimeout(self):
-        if self.sched.running:
-            self.sched.shutdown(wait=False)
-        self.sched.start()
-        self.sched.add_interval_job(self.proposeMerge, seconds=self.wait, 
-                                    misfire_grace_time=Node.MISFIRE_GRACE_TIME)
-        self.sched.add_interval_job(self.proposeSplit, seconds=self.wait, 
-                                    misfire_grace_time=Node.MISFIRE_GRACE_TIME)
+            self.network.split(self, self.community)
     
     # checks if the transaction does not already exist on this chain
     def checkNewTransaction(self, transaction, prev):

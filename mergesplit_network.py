@@ -10,7 +10,6 @@ from threading import Thread
 import time
 import nacl.encoding
 import nacl.signing
-from threading import Lock
 from apscheduler.scheduler import Scheduler
 import blockchain
 import utils
@@ -28,9 +27,6 @@ class Network:
     splitModelPath = "/models/mergesplit_split.pkl"
     # prediction threshold for mergesplit models to recommend an action
     predictionThreshold = 0.6
-    # nodes must wait for random timeout between 0 and requestTimeout seconds
-    # before sending successive mergesplit proposals (combats DOS attacks)
-    requestTimeout = 5
     # mergesplit fee to reward for proposing accepted merges/splits (inventive scheme)
     mergesplitFee = 5
     
@@ -49,8 +45,6 @@ class Network:
         #self.splitModel = joblib.load(self.splitModelPath)
         self.mergeModel = None
         self.splitModel = None
-        # lock prevents multiple merges/splits from executing at the same time
-        self.lock = Lock()
     
     def summarize(self):
         print('MergeSplit Network Summary:')
@@ -72,77 +66,32 @@ class Network:
         
     # executes a merge proposed by proposer between community1 and community2 
     def merge(self, proposer, community1, community2):
-        # acquire lock to ensure that no more than 1 merge/split can be executed at once
-        self.lock.acquire()
-        try:
-            # check if a merge/split was not just executed
-            if not proposer.restart:
-                # try to execute the merge
-                # returns status of operation and the new merged community if successful
-                approved, community = community1.merge(community2)
-                if approved:
-                    # if successful, proposer accrues a mergesplit transaction fee
-                    community.accrueTransactionFee(proposer)
-                    self._removeCommunity(community2.getCommunityId())
-        finally:
-            # if the merge/split was not just executed (by another node)
-            if not proposer.restart:
-                # reset the nodes
-                for c in self.communities:
-                    for node in c.nodes:
-                        # indicate for other nodes about to acquire the lock
-                        # to give up their claim to it
-                        node.restart = True
-                        # randomly assign a timeout period to every node in the community
-                        # before sending another merge/split proposal
-                        node.wait = random.randrange(1, Network.requestTimeout)
-                        node.setRequestTimeout()
-            # release lock allowing merge/splits to be proposed again
-            self.lock.release()
-            proposer.restart = False
-            # timeout the proposing node to mitigate DOS attacks
-            time.sleep(Network.requestTimeout)
+        # try to execute the merge
+        # returns status of operation and the new merged community if successful
+        approved, community = community1.merge(community2)
+        if approved:
+            # if successful, proposer accrues a mergesplit transaction fee
+            community.accrueTransactionFee(proposer)
+            self._removeCommunity(community2.getCommunityId())
 
     # executes a split proposed by proposer for community
     def split(self, proposer, community):
-        # acquire lock to ensure that no more than 1 merge/split can be executed at once
-        self.lock.acquire()
-        try:
-            # check if a merge/split was not just executed
-            if not proposer.restart:
-                # try to execute the split
-                # returns status of operation and the two split communities if successful
-                approved, community1, community2 = community.split()
-                if approved:
-                    # if successful and community1 contains the proposer
-                    if community1.contains(proposer.publicKey):
-                        # proposer in community1 accrues the transaction fee
-                        community1.accrueTransactionFee(proposer)
-                    else:
-                        # proposer in community2 accrues the transaction fee
-                        community2.accrueTransactionFee(proposer)
-
-                    # remove old community from the network and add in the two new ones
-                    self._removeCommunity(community.getCommunityId())
-                    self.communities.append(community1)
-                    self.communities.append(community2)
-        finally:
-            # if the merge/split was not just executed (by another node)
-            if not proposer.restart:
-                for c in self.communities:
-                    for node in c.nodes:
-                        # indicate for other nodes about to acquire the lock
-                        # to give up their claim to it
-                        node.restart = True
-                        # randomly assign a timeout period to every node in the community
-                        # before sending another merge/split proposal
-                        node.wait = random.randrange(1, Network.requestTimeout)
-                        node.setRequestTimeout()
-            # release lock allowing merge/splits to be proposed again
-            self.lock.release()
-        proposer.restart = False
-        # timeout the proposing node to mitigate DOS attacks
-        time.sleep(Network.requestTimeout)
+        print('splitting')
+        # try to execute the split
+        # returns status of operation and the two split communities if successful
+        approved, community1, community2 = community.split()
+        if approved:
+            # if successful and community1 contains the proposer
+            if community1.contains(proposer.publicKey):
+                # proposer in community1 accrues the transaction fee
+                community1.accrueTransactionFee(proposer)
+            else:
+                # proposer in community2 accrues the transaction fee
+                community2.accrueTransactionFee(proposer)
+            # remove old community from the network and add in the two new ones
+            self._removeCommunity(community.getCommunityId())
+            self.communities.append(community1)
+            self.communities.append(community2)
 
     # run ML classification of merge utility (novel incentive scheme)
     def scoreMerge(self, community1, community2):

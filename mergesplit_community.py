@@ -11,8 +11,6 @@ from threading import Thread
 import time
 import nacl.encoding
 import nacl.signing
-from threading import Lock
-from apscheduler.scheduler import Scheduler
 import blockchain
 import utils
 import mergesplit_node
@@ -36,12 +34,11 @@ class Community:
         self.pool = pool
         # community's unique id
         self.id = id
-        if nodeList != None:
+        if nodeList:
             self.nodeCount = len(nodeList)
             self.nodes = nodeList
             for i in range(self.nodeCount):
-                nodes = self.nodes
-                self.nodeLookup[nodes[i].getPublicKey] = nodes[i]
+                self.nodeLookup[self.nodes[i].getPublicKey] = self.nodes[i]
         else:
             # create constituent nodes of community
             self.nodeCount = len(keys)
@@ -49,8 +46,6 @@ class Community:
                 node = mergesplit_node.Node(keys[i][0], keys[i][1], self)
                 self.nodes.append(node)
                 self.nodeLookup[keys[i][0]] = node
-        for node in self.nodes:
-            node.setRequestTimeout()
 
     def getCommunityNodes(self):
         return self.nodes
@@ -83,8 +78,6 @@ class Community:
         # update node count
         self.nodeCount += 1
         node.chain = self.fetchUpToDateBlockchain()
-        # start sending asynchronous merge/split proposals
-        node.setRequestTimeout()
 
     def selectCreator(self):
         # randomly sample validators from nodeCount according to stake
@@ -117,12 +110,27 @@ class Community:
                 return True
         return False
 
+    # simulate merge/split proposals
+    def checkProposal(self, creator):
+        # proposal == 1 if a merge/split, else no op
+        proposal = (random.randint(1, 3) == 1)
+        if proposal:
+            isSplit = random.choice([True, False])
+            if isSplit:
+                # if a split proposal, propose a split
+                creator.proposeSplit()
+            else:
+                # otherwise propose a merge
+                creator.proposeMerge()
+
     # driver run function executed within thread context
     def run(self):
         # as long as valid transactions exist in the community
         while self.validTransactionExists():
             # randomly sample a validator to propose a block
             creator = self.selectCreator()
+            # check if the selected node chooses to propose a merge/split
+            self.checkProposal(creator)
             for transaction in self.pool:
                 # select a transaction to include in the proposed block
                 tx = utils.Utils.serializeTransaction(transaction)
@@ -263,13 +271,13 @@ class Community:
     # returns the length of this longest chain if all nodes share the same longest chain
     # returns False if there are 2 forked chains in a community with same longest length (can just rerun)
     def checkForMatchedSequences(self):
-        for i in range(0,len(self.nodes)-1):
+        for i in range(0, len(self.nodes)-1):
             current = self.nodes[i].chain.longestChain()
             nxt = self.nodes[i+1].chain.longestChain()
             size = 0
             while current:
                 if (current.block.tx != nxt.block.tx
-                        or current.block.prev != nxt.block.prev):
+                    or current.block.prev != nxt.block.prev):
                     return False
                 current = current.prev
                 nxt = nxt.prev
