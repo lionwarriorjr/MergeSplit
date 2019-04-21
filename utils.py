@@ -10,8 +10,6 @@ from threading import Thread
 import time
 import nacl.encoding
 import nacl.signing
-from threading import Lock
-from apscheduler.scheduler import Scheduler
 import blockchain
 import mergesplit_node
 import mergesplit_network
