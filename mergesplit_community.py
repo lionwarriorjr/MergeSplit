@@ -146,7 +146,7 @@ class Community:
     # construct mergesplit transaction fee (novel incentive scheme)
     def accrueTransactionFee(self, receiver):
         inp = []
-        out = [{"value": mergesplit_network.Network.mergesplitFee, "pubkey": receiver.address}]
+        out = [{"value": mergesplit_network.Network.mergesplitFee, "pubkey": receiver.publicKey}]
         serializedInput = "".join([str(inp['number']) + str(inp['output']['value']) + str(inp['output']['pubkey'])
                                 for inp in receiverInput])
         serializedOutput = "".join([str(out['value']) + str(out['pubkey']) for out in receiverOutput])
