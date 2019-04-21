@@ -189,11 +189,11 @@ class Community:
         neighborNodes = neighbor.getCommunityNodes()
         for node in neighborNodes:
             if not node.approveMerge():
-                return False
+                return False, None
 
         for node in self.nodes:
             if not node.approveMerge():
-                return False
+                return False, None
         
         # update blockchain for all nodes in both communities, inserting a mergeblock between the two chains
         # combine the two communities transaction pool together
@@ -237,7 +237,7 @@ class Community:
             if node.approveSplit():
                 approved += 1
         if approved < self.nodeCount/2:
-            return False
+            return False, None, None
 
         pubkeys = []
         for newNode in newCommunityNodes:
