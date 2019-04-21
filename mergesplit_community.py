@@ -145,19 +145,19 @@ class Community:
 
     # construct mergesplit transaction fee (novel incentive scheme)
     def accrueTransactionFee(self, receiver):
-        inp = []
-        out = [{"value": mergesplit_network.Network.mergesplitFee, "pubkey": receiver.publicKey}]
+        receiverInp = []
+        receiverOut = [{"value": mergesplit_network.Network.mergesplitFee, "pubkey": receiver.publicKey}]
         serializedInput = "".join([str(inp['number']) + str(inp['output']['value']) + str(inp['output']['pubkey'])
-                                for inp in receiverInput])
-        serializedOutput = "".join([str(out['value']) + str(out['pubkey']) for out in receiverOutput])
+                                  for inp in receiverInp])
+        serializedOutput = "".join([str(out['value']) + str(out['pubkey']) for out in receiverOut])
         # message to sign for mergesplit fee
         message = str.encode(serializedInput + serializedOutput)
         # sign the message
-        signed = receiver.prikey.sign(message, encoder=nacl.encoding.HexEncoder)
+        signed = receiver.privateKey.sign(message, encoder=nacl.encoding.HexEncoder)
         sig = str(signed.signature, 'utf-8')
         number = H(str.encode(serializedInput + serializedOutput + sig)).hexdigest()
         # construct mergesplit transaction
-        transaction = buildingblocks.Transaction(number, receiverInput, receiverOutput, sig)
+        transaction = buildingblocks.Transaction(number, receiverInp, receiverOut, sig)
         tx = utils.Utils.serializeTransaction(transaction)
         chain = self.nodes[0].chain
         prev = H(str.encode(utils.Utils.serializeBlock(chain.longestChain().block))).hexdigest()
