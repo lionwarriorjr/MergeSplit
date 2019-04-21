@@ -278,7 +278,7 @@ class Community:
             size = 0
             while current:
                 if (current.block.tx != nxt.block.tx
-                    or current.block.prev != nxt.block.prev):
+                        or current.block.prev != nxt.block.prev):
                     return False
                 current = current.prev
                 nxt = nxt.prev
@@ -317,16 +317,16 @@ class Community:
         output_pairs = [item for item in old_chain_retain if item not in old_chain_to_zero]
 
         # set put all viable outputs to the input of this new transaction
-        for (value, pubkey) in old_chain_retain:
-            inp.append({"value": value, "pubkey": pubkey})
+        for (number, value, pubkey) in old_chain_retain:
+            inp.append({"number": number, "output": {"value": value, "pubkey": pubkey}})
             input_val += value
 
         # set all inputs not remaining in the old chain to output to 0
-        for (value, pubkey) in old_chain_to_zero:
+        for (number, value, pubkey) in old_chain_to_zero:
             out.append({"value": 0, "pubkey": pubkey})
 
         # set all inputs remaining in the old chain to output to their original output value
-        for (value, pubkey) in output_pairs:
+        for (number, value, pubkey) in output_pairs:
             out.append({"value": value, "pubkey": pubkey})
             output_val += value
 
@@ -357,9 +357,10 @@ class Community:
 
             # iterate through all inputs and remove them as viable balances
             for item in inp:
+                number = item["number"]
                 pubkey = item["output"]["pubkey"]
                 value = item["output"]["value"]
-                transaction = (value, pubkey)
+                transaction = (number, value, pubkey)
 
                 # add transaction to spent transactions list of old chain
                 old_chain_spent.append(transaction)
@@ -371,9 +372,10 @@ class Community:
 
             # iterate through all outputs and add them as viable balances
             for item in out:
+                number = tx.number
                 pubkey = item["pubkey"]
                 value = item["value"]
-                transaction = (value, pubkey)
+                transaction = (number, value, pubkey)
 
                 # check if transaction has been spent, if not add to retained transactions
                 if transaction in old_chain_spent:
