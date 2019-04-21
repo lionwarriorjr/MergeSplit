@@ -167,6 +167,7 @@ class Community:
             node.chain.addBlock(block)
         # update stake of receiver of the fee
         receiver.stake += mergesplit_network.Network.mergesplitFee
+        print(tx)
         return True
 
     # broadcasts a proposed block to all nodes to verify and add to their blockchains

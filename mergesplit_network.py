@@ -58,7 +58,7 @@ class Network:
 
     def _removeCommunity(self, id):
         index = -1
-        for i, community in enumerate(communities):
+        for i, community in enumerate(self.communities):
             if community.getCommunityId() == id:
                 index = i
         if index != -1:
@@ -76,7 +76,6 @@ class Network:
 
     # executes a split proposed by proposer for community
     def split(self, proposer, community):
-        print('splitting')
         # try to execute the split
         # returns status of operation and the two split communities if successful
         approved, community1, community2 = community.split()
