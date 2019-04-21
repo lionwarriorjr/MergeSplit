@@ -357,10 +357,10 @@ class Community:
             for item in inp:
                 pubkey = item["pubkey"]
                 value = item["value"]
-                tx = (value, pubkey)
+                transaction = (value, pubkey)
 
                 # add transaction to spent transactions list of old chain
-                old_chain_spent.append(tx)
+                old_chain_spent.append(transaction)
 
                 # remove already spent transaction from initial balance of new chain
                 # should be no overflow error since using python
@@ -371,16 +371,16 @@ class Community:
             for item in out:
                 pubkey = item["pubkey"]
                 value = item["value"]
-                tx = (value, pubkey)
+                transaction = (value, pubkey)
 
                 # check if transaction has been spent, if not add to retained transactions
-                if tx in old_chain_spent:
-                    old_chain_spent.remove(tx)
+                if transaction in old_chain_spent:
+                    old_chain_spent.remove(transaction)
                 else:
-                    old_chain_retain.append(tx)
+                    old_chain_retain.append(transaction)
                     # if transaction will be added to new community, add to list of transactions that will be zeroed
                     if pubkey in pubkeys:
-                        old_chain_to_zero.append(tx)
+                        old_chain_to_zero.append(transaction)
 
                 # add output transaction to initial balance of new chain
                 if pubkey in pubkeys:
