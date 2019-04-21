@@ -68,7 +68,7 @@ class Network:
     def merge(self, proposer, community1, community2):
         # try to execute the merge
         # returns status of operation and the new merged community if successful
-        approved, community = community1.merge(community2)
+        (approved, community) = community1.merge(community2)
         if approved:
             # if successful, proposer accrues a mergesplit transaction fee
             community.accrueTransactionFee(proposer)
@@ -78,7 +78,7 @@ class Network:
     def split(self, proposer, community):
         # try to execute the split
         # returns status of operation and the two split communities if successful
-        approved, community1, community2 = community.split()
+        (approved, community1, community2) = community.split()
         if approved:
             # if successful and community1 contains the proposer
             if community1.contains(proposer.publicKey):
