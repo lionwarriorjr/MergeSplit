@@ -344,9 +344,9 @@ class Community:
     def generateSplitTransactions(self, pubkeys):
         block_node = self.fetchUpToDateBlockchain().longestChain()
         new_chain_balances = defaultdict(int)  # {pubkey: balance} dict for new genesis block
-        old_chain_to_zero = []  # list of (pubkey, value) pairs that are added to new genesis block
+        old_chain_to_zero = []  # list of (number, pubkey, value) pairs that are added to new genesis block
         old_chain_spent = []  # helper list for transactions that are spent (inputs in a block on chain)
-        old_chain_retain = []  # list of (pubkey, value) pairs that are still valid to be used as inputs
+        old_chain_retain = []  # list of (number, pubkey, value) pairs that are still valid to be used as inputs
 
         while True:
             block = block_node.block
@@ -389,9 +389,9 @@ class Community:
                 if pubkey in pubkeys:
                     new_chain_balances[pubkey] += value
 
-            # check if current block is a genesis block or split block, if so all transactions prior should be
-            # accounted for so stop
-            if not block.isGenesis and not block.isSplit:
+            # check if current block is a genesis block, split block or merge block, if so all transactions prior should
+            # be accounted for so stop
+            if not block.isGenesis and not block.isSplit and not block.isMerge:
                 block_node = block_node.prev
                 continue
             else:
@@ -407,3 +407,61 @@ class Community:
                 print("ERROR GENESIS TRANSACTION VALUE NOT EQUAL TO ORIGINAL BALANCES SUM")
         else:
             print("ERROR SPENT TRANSACTION ADDED TO NEW BALANCE")
+
+    def writeMergeTransaction(self, chain_one, chain_two):
+        pass
+
+    # generates a transaction with two previous hashes to the last block of the communities being merged
+    def generateMergeTransaction(self, neighbor):
+        block_node = self.fetchUpToDateBlockchain().longestChain()
+        this_chain_retain = self.getValidOutputs(block_node)
+        block_node = neighbor.fetchUpToDateBlockchain().longestChain()
+        neighbor_chain_retain = self.getValidOutputs(block_node)
+
+        tx = writeMergeTransaction(this_chain_retain, neighbor_chain_retain)
+
+        return
+
+    # returns the valid outputs (unspent outputs) in the block chain starting from block_node
+    def getValidOutputs(self, block_node):
+        this_chain_spent = []  # helper list for transactions that are spent (inputs in a block on chain)
+        this_chain_retain = []  # list of (number, pubkey, value) pairs that are still valid to be used as inputs
+
+        while True:
+            block = block_node.block
+            tx = utils.Utils.deserializeTransaction(block.tx)
+            out = tx.out
+            inp = tx.inp
+
+            # iterate through all inputs and remove them as viable balances
+            for item in inp:
+                number = item["number"]
+                pubkey = item["output"]["pubkey"]
+                value = item["output"]["value"]
+                transaction = (number, value, pubkey)
+
+                # add transaction to spent transactions list of old chain
+                this_chain_spent.append(transaction)
+
+            # iterate through all outputs and add them as viable balances
+            for item in out:
+                number = tx.number
+                pubkey = item["pubkey"]
+                value = item["value"]
+                transaction = (number, value, pubkey)
+
+                # check if transaction has been spent, if not add to retained transactions
+                if transaction in this_chain_spent:
+                    this_chain_spent.remove(transaction)
+                else:
+                    this_chain_retain.append(transaction)
+
+            # check if current block is a genesis block, split block or merge block, if so all transactions prior should
+            # be accounted for so stop
+            if not block.isGenesis and not block.isSplit and not block.isMerge:
+                block_node = block_node.prev
+                continue
+            else:
+                break
+
+        return this_chain_retain
