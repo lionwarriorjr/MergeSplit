@@ -44,6 +44,8 @@ class Network:
         #self.splitModel = joblib.load(self.splitModelPath)
         self.mergeModel = None
         self.splitModel = None
+        self.numMerges = 0 # number of executed merges
+        self.numSplits = 0 # number of executed splits
     
     def summarize(self):
         print('MergeSplit Network Summary:')
@@ -54,7 +56,7 @@ class Network:
             print(str(len(community.pool)) + ' transactions loaded into pool')
             active = sum([thread.isAlive() for thread in self.threads])
             print(str(active) + ' threads currently active')
-
+            
     def _removeCommunity(self, id):
         index = -1
         for i, community in enumerate(self.communities):
@@ -72,7 +74,8 @@ class Network:
             # if successful, proposer accrues a mergesplit transaction fee
             community.accrueTransactionFee(proposer)
             self._removeCommunity(community2.getCommunityId())
-
+            self.numMerges += 1
+            
     # executes a split proposed by proposer for community
     def split(self, proposer, community):
         # try to execute the split
@@ -90,6 +93,7 @@ class Network:
             self._removeCommunity(community.getCommunityId())
             self.communities.append(community1)
             self.communities.append(community2)
+            self.numSplits+= 1
 
     # run ML classification of merge utility (novel incentive scheme)
     def scoreMerge(self, community1, community2):

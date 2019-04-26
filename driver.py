@@ -88,11 +88,11 @@ def main():
     
     print(str(len(driver.network.communities)) + ' communities exist after processing')
     for community in driver.network.communities:
-        print("Length of Verified Ledger for community " + str(community.id) + ": " + 
-              str(community.checkForMatchedSequences()))
+        print("Length of Verified Ledger for community " + str(community.id) + ": " + str(community.checkForMatchedSequences()) )
 
     print('\nElapsed time (sec): ' + str(end-start))
     
+    print("Executed: " + str(driver.network.numMerges) + " merges, " + str(driver.network.numSplits) + " splits")
     # log each node's blockchain to a file
     root = sys.argv[2]
     for community in driver.network.communities:

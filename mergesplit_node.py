@@ -48,20 +48,17 @@ class Node:
 
     # node proposal to merge a community with another in the network
     def proposeMerge(self):
-        print("A: Proposed Merge")
         if self.network and self.network.communities:
-            print("B: Proposed Merge")
             neighbor = random.choice(self.network.communities)
             if self.network.canMerge(self.community, neighbor):
-                print("C: Proposed Merge")
                 self.network.merge(self, self.community, neighbor)
                 #pass
 
     # node proposal to split a community into two new communites in the network
     def proposeSplit(self):
         if self.network and self.network.canSplit(self.community):
-            #self.network.split(self, self.community)
-            pass
+            self.network.split(self, self.community)
+            
     # checks if the transaction does not already exist on this chain
     def checkNewTransaction(self, transaction, prev):
         current = prev
