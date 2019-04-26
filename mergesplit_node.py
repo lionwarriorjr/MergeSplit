@@ -51,13 +51,19 @@ class Node:
         if self.network and self.network.communities:
             neighbor = random.choice(self.network.communities)
             if self.network.canMerge(self.community, neighbor):
+                self.community.isLocked = True
+                neighbor.isLocked = True
                 self.network.merge(self, self.community, neighbor)
+                self.community.isLocked = False
+                neighbor.isLocked = False
                 #pass
 
     # node proposal to split a community into two new communites in the network
     def proposeSplit(self):
         if self.network and self.network.canSplit(self.community):
+            self.community.isLocked = True
             self.network.split(self, self.community)
+            self.community.isLocked = False
             
     # checks if the transaction does not already exist on this chain
     def checkNewTransaction(self, transaction, prev):

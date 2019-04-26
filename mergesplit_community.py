@@ -46,7 +46,9 @@ class Community:
                 node = mergesplit_node.Node(keys[i][0], keys[i][1], self)
                 self.nodes.append(node)
                 self.nodeLookup[keys[i][0]] = node
-
+        # if locked, that means someone is currently merging/splitting it
+        self.isLocked = False
+        
     def getCommunityNodes(self):
         return self.nodes
     

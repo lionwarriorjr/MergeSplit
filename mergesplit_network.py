@@ -135,6 +135,8 @@ class Network:
     def canMerge(self, community1, community2):
         if community1 == community2:
             return False
+        if community1.isLocked or community2.isLocked:
+            return False
         # check if merge op is legal
         # TODO: implement merge validation logic
         # ADD CODE HERE
@@ -146,6 +148,8 @@ class Network:
 
     # validate that a community can be split
     def canSplit(self, community):
+        if community.isLocked:
+            return False
         # check if split op is legal
         # TODO: implement split validation logic
         # ADD CODE HERE
