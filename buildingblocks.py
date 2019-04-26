@@ -15,13 +15,14 @@ class Transaction:
 # each block references a prev block, has an isGenesis flag,
 # and a flag indicating if the internal transaction is a mergesplit fee
 class Block:
-    def __init__(self, tx, prev, isGenesis=False, isFee=False, isSplit=False, isMerge=False):
+    def __init__(self, tx, prev, isGenesis=False, isFee=False, isSplit=False, isMerge=False, mergePrev2 = None):
         self.tx = tx
         self.prev = prev
         self.isGenesis = isGenesis
         self.isFee = isFee
         self.isSplit = isSplit
         self.isMerge = isMerge
+        self.mergePrev2 = mergePrev2
     
     # can only change prev if is genesis block and new block is merge
     def changePrev(self, newPrev):

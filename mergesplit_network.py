@@ -138,7 +138,7 @@ class Network:
         # return whether model score > threshold to recommend the merge
         #return score > self.predictionThreshold
 
-        return False
+        return True
 
     # validate that a community can be split
     def canSplit(self, community):

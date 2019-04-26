@@ -183,18 +183,42 @@ class Community:
         self.updateStake(utils.Utils.deserializeTransaction(block.tx))
         return True
 
-    ### TODO: implement merging functionality
     def merge(self, neighbor):
         # Query all nodes in both community to see if they want to merge
+        approved = 0
         neighborNodes = neighbor.getCommunityNodes()
         for node in neighborNodes:
-            if not node.approveMerge():
-                return False, None
+            if node.approveMerge():
+                approved +=  1
+                
+        if approved < (neighbor.nodeCount*2/3):
+            return False, None
 
+        approved = 0
         for node in self.nodes:
-            if not node.approveMerge():
-                return False, None
+            if node.approveMerge():
+                approved +=  1
+        if approved < (self.nodeCount*2/3):
+            return False,None
+
+        transaction = self.generateMergeTransaction(neighbor)
+        transaction = utils.Utils.serializeTransaction(transaction)
         
+        # add a new merge block to remaining nodes blockchain
+        serialSelf = utils.Utils.serializeBlock(self.fetchUpToDateBlockchain().longestChain().block)
+        serialNeighbor = utils.Utils.serializeBlock(neighbor.fetchUpToDateBlockchain().longestChain().block)
+        mergeBlock = buildingblocks.Block(transaction, H(str.encode(serialSelf)).hexdigest(), isMerge=True, mergePrev2 =  H(str.encode(serialNeighbor)).hexdigest())
+        for node in self.nodes:
+            node.chain.addBlock(mergeBlock)
+        '''
+        for node in neighbor.nodes:
+            node.chain.addBlock(mergeBlock)
+            self.nodes.append(node)'''
+        
+        return True, self
+    
+    
+        '''       
         # update blockchain for all nodes in both communities, inserting a mergeblock between the two chains
         # combine the two communities transaction pool together
         mergeBlock = buildingblocks.Block(None, self.nodes[self.nodeCount-1], isGenesis=False, isFee=False, isSplit=False, isMerge=True)
@@ -222,7 +246,7 @@ class Community:
         #self.nodeCount = self.nodeCount+neighbor.nodeCount
         for tx in neighbor.pool:
             self.pool.append(tx)
-        return True, self
+        return True, self'''
     
     def split(self):
         # randomly select half the nodes to split
@@ -408,8 +432,38 @@ class Community:
         else:
             print("ERROR SPENT TRANSACTION ADDED TO NEW BALANCE")
 
+    # helper function to create the merge transaction
+    # chain_one: list of (number,values, pubkey) tuples of outputs from self chain that were spent
+    # chain_two:  list of (number,values, pubkey) tuples of outputs from neighbor chain that were not spent
     def writeMergeTransaction(self, chain_one, chain_two):
-        pass
+        inp = []
+        out = []
+        input_val = 0
+        output_val = 0
+        
+        # set put all viable outputs to the input & output of this new transaction
+        for (number, value, pubkey) in chain_one:
+            inp.append({"number": number, "output": {"value": value, "pubkey": pubkey}})
+            input_val += value
+            out.append({"value": value, "pubkey": pubkey})
+            output_val += value
+        
+        # set put all viable outputs to the input & output of this new transaction
+        for (number, value, pubkey) in chain_two:
+            inp.append({"number": number, "output": {"value": value, "pubkey": pubkey}})
+            input_val += value
+            out.append({"value": value, "pubkey": pubkey})
+            output_val += value
+
+
+        sig = H(str.encode(str(inp) + str(out))).hexdigest()
+        number = H(str.encode(str(inp) + str(out) + sig)).hexdigest()
+        transaction = buildingblocks.Transaction(number, inp, out, sig)
+
+        if input_val == output_val:
+            return transaction
+        else:
+            print("ERROR TRANSACTION INPUT NOT EQUAL TO OUTPUT")
 
     # generates a transaction with two previous hashes to the last block of the communities being merged
     def generateMergeTransaction(self, neighbor):
@@ -418,9 +472,9 @@ class Community:
         block_node = neighbor.fetchUpToDateBlockchain().longestChain()
         neighbor_chain_retain = self.getValidOutputs(block_node)
 
-        tx = writeMergeTransaction(this_chain_retain, neighbor_chain_retain)
+        tx = self.writeMergeTransaction(this_chain_retain, neighbor_chain_retain)
 
-        return
+        return tx
 
     # returns the valid outputs (unspent outputs) in the block chain starting from block_node
     def getValidOutputs(self, block_node):

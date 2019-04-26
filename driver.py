@@ -46,6 +46,7 @@ class Driver:
     def initializeSimulation(self):
         for community in self.network.communities:
             pool = community.pool
+            print(len(pool))
             if (len(pool) == 0):
                 raise NameError('Transaction list for community ' + str(community.id) + ' is empty!')
             # create genesis block
@@ -74,7 +75,6 @@ class Driver:
 # main driver to instantiate MergeSplit driver class and simulate network activity with threads
 # receives as command-line arguments the input file and output directory to store logged blockchains
 def main():
-    
     # instantiate blockchains main driver
     driver = Driver(sys.argv[1])
     # run the driver (simulate network activity with threads)
