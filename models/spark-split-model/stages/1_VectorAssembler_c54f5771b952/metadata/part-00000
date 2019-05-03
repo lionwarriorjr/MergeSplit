@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.VectorAssembler","timestamp":1556911485808,"sparkVersion":"2.4.1","uid":"VectorAssembler_c54f5771b952","paramMap":{"outputCol":"features","inputCols":["numberOfNodes","longestChain","numberOfForks","totalStake"]},"defaultParamMap":{"outputCol":"VectorAssembler_c54f5771b952__output","handleInvalid":"error"}}

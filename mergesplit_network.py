@@ -15,15 +15,25 @@ import utils
 import mergesplit_node
 import mergesplit_community
 import buildingblocks
+from pyspark import SparkContext
+from pyspark.ml import Pipeline, PipelineModel
+from pyspark.ml.classification import GBTClassifier
+from pyspark.ml.feature import StringIndexer
+from pyspark.ml.feature import * 
+from pyspark.sql import SQLContext, SparkSession, Row
+from pyspark.sql.types import *
+import pyspark.sql.functions as F
 
 
 # implements a parent network that holds constituent disjoint communities
 class Network:
 
+    # set Spark context
+    spark = SparkSession.builder.appName('mergesplit').getOrCreate()
     # model file for mergesplit merge model
-    mergeModelPath = "/models/mergesplit_merge.pkl"
+    mergeModelPath = "./models/spark-merge-model"
     # model file for mergesplit split model
-    splitModelPath = "/models/mergesplit_split.pkl"
+    splitModelPath = "./models/spark-split-model"
     # prediction threshold for mergesplit models to recommend an action
     predictionThreshold = 0.6
     # mergesplit fee to reward for proposing accepted merges/splits (inventive scheme)
@@ -39,11 +49,10 @@ class Network:
             community = communities[i]
             self.threads.append(Thread(target=community.run, name='Node {}'.format(i)))
         # load mergesplit merge model
-        #self.mergeModel = joblib.load(self.mergeModelPath)
+        # self.mergeModel = PipelineModel.load(self.mergeModelPath)
         # load mergesplit split model
-        #self.splitModel = joblib.load(self.splitModelPath)
-        self.mergeModel = None
-        self.splitModel = None
+        # self.splitModel = PipelineModel.load(self.splitModelPath)
+        self.mergeModel, self.splitModel = None, None
         self.numMerges = 0 # number of executed merges
         self.numSplits = 0 # number of executed splits
     
@@ -137,24 +146,14 @@ class Network:
             return False
         if community1.isLocked or community2.isLocked:
             return False
-        # check if merge op is legal
-        # TODO: implement merge validation logic
-        # ADD CODE HERE
-        #score = self.scoreMerge(community1, community2)
-        # return whether model score > threshold to recommend the merge
-        #return score > self.predictionThreshold
-
+        # run ML model to validate the merge
+        # return self.scoreMerge(community1, community2)
         return True
 
     # validate that a community can be split
     def canSplit(self, community):
         if community.isLocked:
             return False
-        # check if split op is legal
-        # TODO: implement split validation logic
-        # ADD CODE HERE
-        #score = self.scoreSplit(community)
-        # return whether model score > threshold to recommend the split
-        #return score > self.predictionThreshold
-
+        # run ML model to validate the split
+        # return self.scoreSplit(community)
         return True
